@@ -2,7 +2,19 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './Login.css';
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Box,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Divider,
+} from '@mui/material';
 
 interface FormData {
   name: string;
@@ -16,17 +28,17 @@ const Register: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    role: 'user'
+    role: 'user',
   });
 
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      [name]: value,
     });
   };
 
@@ -46,57 +58,98 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="auth-container">
-      <form onSubmit={handleSubmit} className="auth-form">
-        <h2>Create an Account</h2>
-        {error && <p className="error">{error}</p>}
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
+        <Typography variant="h5" align="center" gutterBottom>
+          Create an Account
+        </Typography>
 
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
+        {error && (
+          <Typography color="error" align="center" gutterBottom>
+            {error}
+          </Typography>
+        )}
 
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="name"
+            label="Full Name"
+            name="name"
+            autoComplete="name"
+            autoFocus
+            value={formData.name}
+            onChange={handleChange}
+          />
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            value={formData.email}
+            onChange={handleChange}
+          />
 
-        {/* Optional Role Selector */}
-        <select name="role" value={formData.role} onChange={handleChange}>
-          <option value="user">User</option>
-          <option value="admin">Admin</option>
-        </select>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="new-password"
+            value={formData.password}
+            onChange={handleChange}
+          />
 
-        <button type="submit">Register</button>
+          {/* Optional Role Selector */}
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="role-label">Role</InputLabel>
+            <Select
+              labelId="role-label"
+              id="role"
+              name="role"
+              value={formData.role}
+              label="Role"
+              onChange={handleChange}
+            >
+              <MenuItem value="user">User</MenuItem>
+              <MenuItem value="admin">Admin</MenuItem>
+            </Select>
+          </FormControl>
 
-        <div className="divider">or</div>
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 2 }}>
+            Register
+          </Button>
 
-        <button type="button" onClick={handleGoogleSignUp} className="btn-google">
-          Sign up with Google
-        </button>
+          <Divider sx={{ my: 2 }}>or</Divider>
 
-        <p>
-          Already have an account? <a href="/login">Login</a>
-        </p>
-      </form>
-    </div>
+          <Button
+            fullWidth
+            variant="contained"
+            color="secondary"
+            onClick={handleGoogleSignUp}
+            sx={{ mb: 2 }}
+          >
+            Sign Up with Google
+          </Button>
+        </Box>
+
+        <Typography align="center">
+          Already have an account?{' '}
+          <a href="/login" style={{ textDecoration: 'none', color: '#1976d2' }}>
+            Login
+          </a>
+        </Typography>
+      </Paper>
+    </Container>
   );
 };
 
