@@ -12,6 +12,7 @@ import PreviousEventsPage from './pages/PreviousEventsPage';
 import MediaPRPage from './pages/MediaPRPage';
 import EventDetailPage from './pages/EventDetailPage';
 import Register from './pages/Register';
+import Events from './pages/Events'; 
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/media-pr" element={<MediaPRPage />} />
         <Route path="/event/:id" element={<EventDetailPage />} />
         <Route path="/Register" element={<Register />} />
+        <Route path="/Events" element={<Events />} />
       </Routes>
     </Router>
   );
