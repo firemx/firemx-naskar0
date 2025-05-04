@@ -1,89 +1,119 @@
+// frontend/src/pages/Login.tsx
 import React, { useState } from 'react';
 import {
   Container,
-  Box,
   Paper,
   Typography,
   TextField,
   Button,
+  Box,
+  Divider,
 } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Just a placeholder until backend is connected
+
     if (!email || !password) {
       setError('Please enter email and password');
       return;
     }
-    // Simulate login redirect for now
-    window.location.href = '/dashboard';
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || 'Login failed');
+        return;
+      }
+
+      localStorage.setItem('token', data.token);
+      window.location.href = '/dashboard';
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://107.152.35.103/api/auth/google';
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 8 }}>
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="80vh"
-      >
-        <Paper elevation={4} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
-          <Typography variant="h5" component="h1" gutterBottom align="center">
-            Login to Skating Platform
-          </Typography>
-          {error && (
-            <Typography color="error" align="center" sx={{ mb: 2 }}>
-              {error}
-            </Typography>
-          )}
-          <form onSubmit={handleSubmit}>
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              margin="normal"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <TextField
-              label="Password"
-              type="password"
-              fullWidth
-              margin="normal"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              fullWidth
-              size="large"
-              sx={{ mt: 2 }}
-            >
-              Login
-            </Button>
-          </form>
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>
+        <Typography variant="h5" align="center" gutterBottom>
+          Login to Skating Platform
+        </Typography>
 
-          <Box textAlign="center" mt={2}>
-            <Typography>
-              Don't have an account?{' '}
-              <a href="/register" style={{ textDecoration: 'none', color: '#1976d2' }}>
-                Register
-              </a>
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
+        {error && (
+          <Typography color="error" align="center" gutterBottom>
+            {error}
+          </Typography>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 2 }}>
+            Login
+          </Button>
+
+          <Divider sx={{ my: 2 }}>or</Divider>
+
+          <Button
+            fullWidth
+            variant="contained"
+            color="secondary"
+            onClick={handleGoogleLogin}
+            startIcon={<GoogleIcon />}
+            sx={{ mb: 2 }}
+          >
+            Sign In with Google
+          </Button>
+        </Box>
+
+        <Typography align="center">
+          Don't have an account?{' '}
+          <a href="/register" style={{ textDecoration: 'none', color: '#1976d2' }}>
+            Register
+          </a>
+        </Typography>
+      </Paper>
     </Container>
   );
 };

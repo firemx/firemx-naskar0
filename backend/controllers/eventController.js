@@ -1,4 +1,4 @@
-// /backend/controllers/eventController.js
+// backend/controllers/eventController.js
 const { pool } = require('../config/db');
 const { createEvent, getAllEvents } = require('../models/Event');
 
@@ -124,11 +124,26 @@ const deleteEvent = async (req, res) => {
   }
 };
 
-// ✅ Single Export for All Functions
+/**
+ * ✅ New Function: Get Upcoming Events
+ */
+const getUpcomingEvents = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM events WHERE start_date > NOW() ORDER BY start_date ASC'
+    );
+    res.json({ events: rows });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error fetching upcoming events' });
+  }
+};
+
+// ✅ Export All Functions
 module.exports = {
   createNewEvent,
   listAllEvents,
   getEventById,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  getUpcomingEvents, // 👈 Added here
 };
