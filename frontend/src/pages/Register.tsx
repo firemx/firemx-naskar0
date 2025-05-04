@@ -9,32 +9,29 @@ import {
   TextField,
   Button,
   Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Divider,
 } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 interface FormData {
-  name: string;
+  fullName: string;
   email: string;
   password: string;
-  role: 'user' | 'admin';
+  phone: string;
 }
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
-    name: '',
+    fullName: '',
     email: '',
     password: '',
-    role: 'user',
+    phone: '',
   });
 
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -45,7 +42,11 @@ const Register: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post('/api/auth/register', formData);
+      const res = await axios.post('/api/auth/register', {
+        ...formData,
+        role: 'spectator', // Hardcoded to spectator
+      });
+
       console.log('Registration successful:', res.data);
       navigate('/login');
     } catch (err: any) {
@@ -54,7 +55,7 @@ const Register: React.FC = () => {
   };
 
   const handleGoogleSignUp = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = 'http://107.152.35.103/api/auth/google';
   };
 
   return (
@@ -75,12 +76,24 @@ const Register: React.FC = () => {
             margin="normal"
             required
             fullWidth
-            id="name"
+            id="fullName"
             label="Full Name"
-            name="name"
+            name="fullName"
             autoComplete="name"
             autoFocus
-            value={formData.name}
+            value={formData.fullName}
+            onChange={handleChange}
+          />
+
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="phone"
+            label="Phone Number"
+            name="phone"
+            autoComplete="tel"
+            value={formData.phone}
             onChange={handleChange}
           />
 
@@ -109,22 +122,6 @@ const Register: React.FC = () => {
             onChange={handleChange}
           />
 
-          {/* Optional Role Selector */}
-          <FormControl fullWidth margin="normal">
-            <InputLabel id="role-label">Role</InputLabel>
-            <Select
-              labelId="role-label"
-              id="role"
-              name="role"
-              value={formData.role}
-              label="Role"
-              onChange={handleChange}
-            >
-              <MenuItem value="user">User</MenuItem>
-              <MenuItem value="admin">Admin</MenuItem>
-            </Select>
-          </FormControl>
-
           <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 2 }}>
             Register
           </Button>
@@ -136,6 +133,7 @@ const Register: React.FC = () => {
             variant="contained"
             color="secondary"
             onClick={handleGoogleSignUp}
+            startIcon={<GoogleIcon />}
             sx={{ mb: 2 }}
           >
             Sign Up with Google

@@ -22,7 +22,7 @@ module.exports = { getMe };
 
 // @desc    Register a new user (Skater or Spectator)
 const registerUser = async (req, res) => {
-  const { fullName, email, password, role } = req.body;
+  const { fullName, email, password, role, phone } = req.body;
 
   const validRoles = ['skater', 'spectator'];
   if (!validRoles.includes(role)) {
@@ -38,8 +38,8 @@ const registerUser = async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, salt);
 
   const [result] = await pool.query(
-    'INSERT INTO users (full_name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-    [fullName, email, hashedPassword, role]
+    'INSERT INTO users (full_name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?)',
+    [fullName, email, hashedPassword, role, phone]
   );
 
   const token = generateToken(result.insertId, role);
