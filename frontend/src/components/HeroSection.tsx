@@ -10,9 +10,9 @@ import { Link as RouterLink } from 'react-router-dom';
 
 // Sample images for carousel
 const images = [
-  'https://source.unsplash.com/featured/?skate,competition&sig=1',
-  'https://source.unsplash.com/featured/?skater,jump&sig=2',
-  'https://source.unsplash.com/featured/?ramp,ice&sig=3'
+  'https://picsum.photos/1920/1080?random=1', // Placeholder image 1
+  'https://picsum.photos/1920/1080?random=2', // Placeholder image 2
+  'https://picsum.photos/1920/1080?random=3', // Placeholder image 3
 ];
 
 const HeroSection = () => {
