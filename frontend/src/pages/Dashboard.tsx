@@ -9,9 +9,6 @@ import {
   Button,
   Box,
   Avatar,
-  List,
-  ListItem,
-  ListItemText,
 } from '@mui/material';
 import axios from 'axios';
 
@@ -38,13 +35,18 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchUserAndEvents = async () => {
       try {
+        // Fetch user
         const userRes = await axios.get('/api/users/me');
         setUser(userRes.data.user);
 
+        // Fetch events
         const eventRes = await axios.get('/api/events/upcoming');
-        setEvents(eventRes.data.events);
+
+        // Safely extract events or fallback to empty array
+        setEvents(eventRes.data.events || []);
       } catch (err) {
-        console.error('Failed to load data');
+        console.error('Failed to load data', err);
+        setEvents([]); // Fallback to empty array on error
       } finally {
         setLoading(false);
       }
@@ -54,29 +56,36 @@ const Dashboard = () => {
   }, []);
 
   const handleRegisterEvent = (eventId: number) => {
-    // Redirect to payment gateway or Mpesa STK push
     window.location.href = `/event/${eventId}/register`;
   };
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Welcome Message */}
       <Box display="flex" alignItems="center" gap={3} mb={4}>
-        <Avatar sx={{ width: 64, height: 64 }}>{user?.fullName.charAt(0)}</Avatar>
-        <div>
-          <Typography variant="h5">Welcome back, {user?.fullName}</Typography>
-          <Typography color="textSecondary">{user?.email}</Typography>
-          <Typography variant="body2" color="textSecondary">
-            Role: {user?.role}
-          </Typography>
-        </div>
+        {user && (
+          <>
+            <Avatar sx={{ width: 64, height: 64 }}>{user.fullName.charAt(0)}</Avatar>
+            <div>
+              <Typography variant="h5">Welcome back, {user.fullName}</Typography>
+              <Typography color="textSecondary">{user.email}</Typography>
+              <Typography variant="body2" color="textSecondary">
+                Role: {user.role}
+              </Typography>
+            </div>
+          </>
+        )}
       </Box>
 
+      {/* Events List */}
       <Typography variant="h4" gutterBottom>
         Upcoming Events
       </Typography>
 
       {loading ? (
         <Typography>Loading events...</Typography>
+      ) : events.length === 0 ? (
+        <Typography>No upcoming events found.</Typography>
       ) : (
         <Grid container spacing={3}>
           {events.map((event) => (
