@@ -41,16 +41,26 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+  
     try {
-      const res = await axios.post('/api/auth/register', {
-        ...formData,
-        role: 'spectator', // Hardcoded to spectator
+      const res = await axios.post('http://107.152.35.103:5000/api/auth/register', {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        role: 'spectator',
       });
-
-      console.log('Registration successful:', res.data);
+  
+      console.log('Success:', res.data);
       navigate('/login');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'Registration failed';
+  
+      setError(errorMessage);
     }
   };
 

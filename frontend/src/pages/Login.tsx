@@ -18,26 +18,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!email || !password) {
       setError('Please enter email and password');
       return;
     }
-
+  
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('http://107.152.35.103:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+  
       const data = await res.json();
-
+  
       if (!res.ok) {
         setError(data.message || 'Login failed');
         return;
       }
-
+  
       localStorage.setItem('token', data.token);
       window.location.href = '/dashboard';
     } catch (err) {
