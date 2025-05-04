@@ -11,14 +11,16 @@ import {
   useTheme,
 } from '@mui/material';
 import io from 'socket.io-client';
+import EmojiPicker from 'emoji-picker-react'; // Import emoji picker
 
 // Replace with your backend IP
 const socket = io('http://107.152.35.103:5000');
 
 const LiveStreamPage = () => {
-  const [comments, setComments] = useState<{ user: string; text: string }[]>([]);
+  const [comments, setComments] = useState<{ user: string; text: string; timestamp: string }[]>([]);
   const [newComment, setNewComment] = useState('');
   const [user] = useState('Viewer'); // Can come from auth later
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false); // State for emoji picker
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -45,12 +47,18 @@ const LiveStreamPage = () => {
     const comment = {
       user,
       text: newComment,
+      timestamp: new Date().toLocaleTimeString(), // Add timestamp
     };
 
     // Broadcast via Socket.IO
     socket.emit('sendComment', comment);
 
     setNewComment('');
+  };
+
+  // Handle emoji selection
+  const handleEmojiClick = (emojiObject: any) => {
+    setNewComment((prev) => prev + emojiObject.emoji);
   };
 
   return (
@@ -60,93 +68,116 @@ const LiveStreamPage = () => {
       </Typography>
 
       {/* Video + Chat Side by Side (Responsive) */}
-<Grid container spacing={3} sx={{ mb: 4 }}>
-  {/* Video Section */}
-  <Grid size={{ xs: 12, md: 8 }}>
-    <Box
-      sx={{
-        position: 'relative',
-        width: '100%',
-        height: 0,
-        paddingBottom: '56.25%', // 16:9 aspect ratio
-        overflow: 'hidden',
-        borderRadius: 2,
-        boxShadow: 3,
-      }}
-    >
-      <iframe
-        src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1"
-        title="Live Stream"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          border: 'none',
-        }}
-      ></iframe>
-    </Box>
-  </Grid>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Video Section */}
+        <Grid item xs={12} md={8}>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              height: 0,
+              paddingBottom: '56.25%', // 16:9 aspect ratio
+              overflow: 'hidden',
+              borderRadius: 2,
+              boxShadow: 3,
+            }}
+          >
+            <iframe
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1"
+              title="Live Stream"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
+            ></iframe>
+          </Box>
+        </Grid>
 
-  {/* Live Chat Sidebar */}
-  <Grid size={{ xs: 12, md: 4 }}>
-    <Box
-      sx={{
-        borderLeft: isMobile ? 'none' : '1px solid #ccc',
-        pl: isMobile ? 0 : 2,
-        pt: isMobile ? 2 : 0,
-      }}
-    >
-      <Typography variant="h6" gutterBottom>
-        Live Chat
-      </Typography>
+        {/* Live Chat Sidebar */}
+        <Grid item xs={12} md={4}>
+          <Box
+            sx={{
+              borderLeft: isMobile ? 'none' : '1px solid #ccc',
+              pl: isMobile ? 0 : 2,
+              pt: isMobile ? 2 : 0,
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              Live Chat
+            </Typography>
 
-      {/* Chat Messages */}
-      <Box
-        sx={{
-          maxHeight: 400,
-          overflowY: 'auto',
-          border: '1px solid #ddd',
-          p: 2,
-          borderRadius: 1,
-          mb: 2,
-          backgroundColor: '#f9f9f9',
-        }}
-      >
-        {comments.length > 0 ? (
-          comments.map((msg, index) => (
-            <Box key={index} sx={{ mb: 1 }}>
-              <Typography fontWeight="bold">{msg.user}</Typography>
-              <Typography>{msg.text}</Typography>
-              <Divider sx={{ my: 1 }} />
+            {/* Chat Messages */}
+            <Box
+              sx={{
+                maxHeight: 400,
+                overflowY: 'auto',
+                border: '1px solid #ddd',
+                p: 2,
+                borderRadius: 1,
+                mb: 2,
+                backgroundColor: '#f9f9f9',
+              }}
+            >
+              {comments.length > 0 ? (
+                comments.map((msg, index) => (
+                  <Box key={index} sx={{ mb: 1 }}>
+                    <Typography fontWeight="bold">
+                      {msg.user}{' '}
+                      <Typography component="span" color="textSecondary">
+                        ({msg.timestamp})
+                      </Typography>
+                    </Typography>
+                    <Typography>{msg.text}</Typography>
+                    <Divider sx={{ my: 1 }} />
+                  </Box>
+                ))
+              ) : (
+                <Typography color="textSecondary">No messages yet.</Typography>
+              )}
             </Box>
-          ))
-        ) : (
-          <Typography color="textSecondary">No messages yet.</Typography>
-        )}
-      </Box>
 
-      {/* Chat Input */}
-      <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={1}>
-        <TextField
-          label="Chat Message"
-          variant="outlined"
-          fullWidth
-          size="small"
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && handleSendComment()}
-        />
-        <Button variant="contained" onClick={handleSendComment} sx={{ mt: isMobile ? 1 : 0 }}>
-          Send
-        </Button>
-      </Box>
-    </Box>
-  </Grid>
-</Grid>
+            {/* Chat Input */}
+            <Box display="flex" flexDirection={isMobile ? 'column' : 'row'} gap={1}>
+              <TextField
+                label="Chat Message"
+                variant="outlined"
+                fullWidth
+                size="small"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendComment()}
+              />
+              <Button
+                variant="contained"
+                onClick={handleSendComment}
+                sx={{ mt: isMobile ? 1 : 0 }}
+              >
+                Send
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                sx={{ mt: isMobile ? 1 : 0 }}
+              >
+                😊
+              </Button>
+            </Box>
+
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
+              <Box sx={{ mt: 2 }}>
+                <EmojiPicker onEmojiClick={handleEmojiClick} />
+              </Box>
+            )}
+          </Box>
+        </Grid>
+      </Grid>
 
       {/* Comments Section */}
       <Typography variant="h6" gutterBottom>
