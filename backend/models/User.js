@@ -19,6 +19,11 @@ const findUserById = async (id) => {
   return rows[0];
 };
 
+isGoogleAccount: {
+  type: Boolean,
+  default: false
+}
+
 module.exports = {
   createUser,
   findUserByEmail,
