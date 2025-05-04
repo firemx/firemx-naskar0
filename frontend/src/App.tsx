@@ -26,7 +26,7 @@ function App() {
         <Route path="/previous-events" element={<PreviousEventsPage />} />
         <Route path="/media-pr" element={<MediaPRPage />} />
         <Route path="/event/:id" element={<EventDetailPage />} />
-        
+        <Route path="/Register" element={<Register />} />
       </Routes>
     </Router>
   );
