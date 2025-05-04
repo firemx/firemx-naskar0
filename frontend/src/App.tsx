@@ -11,6 +11,7 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import PreviousEventsPage from './pages/PreviousEventsPage';
 import MediaPRPage from './pages/MediaPRPage';
 import EventDetailPage from './pages/EventDetailPage';
+import Register from './pages/Register';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/previous-events" element={<PreviousEventsPage />} />
         <Route path="/media-pr" element={<MediaPRPage />} />
         <Route path="/event/:id" element={<EventDetailPage />} />
+        
       </Routes>
     </Router>
   );
