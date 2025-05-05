@@ -101,7 +101,7 @@ const AdminDashboard = () => {
     });
 
     socket.on('eventCreated', (createdEvent) => {
-      setEvents([createdEvent, ...events]);
+      setEvents((prevEvents) => [createdEvent, ...prevEvents]);
     });
 
     socket.on('eventUpdated', (updatedEvent) => {
@@ -330,52 +330,95 @@ const AdminDashboard = () => {
       </Card>
 
       {/* Events Section */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">Events</Typography>
-            <MuiButton onClick={() => setOpenModal(true)} variant="contained">Add New Event</MuiButton>
-          </Box>
+<Card sx={{ mb: 4 }}>
+  <CardContent>
+    <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Typography variant="h6">Events</Typography>
+      <MuiButton onClick={() => setOpenModal(true)} variant="contained">Add New Event</MuiButton>
+    </Box>
 
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            {events.length > 0 ? (
-              events.map((event) => (
-                <Grid item xs={12} sm={6} md={4} key={event.id}>
-                  <Paper elevation={2} sx={{ p: 2 }}>
-                    <Typography variant="subtitle1">{event.title}</Typography>
-                    <Typography variant="body2">
-                      {new Date(event.start_date).toLocaleDateString()}
+    <Grid container spacing={3} sx={{ mt: 1 }}>
+      {events.length > 0 ? (
+        events.map((event) => (
+          <Grid item xs={12} key={event.id}>
+            <Card elevation={3}>
+              <Grid container>
+                {/* Left side: Image Placeholder */}
+                <Grid item xs={12} md={4}>
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image="https://via.placeholder.com/400x200?text=Event+Image"
+                    alt={event.title}
+                    sx={{ objectFit: 'cover' }}
+                  />
+                </Grid>
+
+                {/* Right side: Event Info */}
+                <Grid item xs={12} md={8}>
+                  <CardContent>
+                    <Typography variant="h5" gutterBottom>
+                      {event.title}
                     </Typography>
-                    <Box sx={{ mt: 1 }}>
+
+                    <Typography variant="body1" gutterBottom>
+                      📅{' '}
+                      {new Date(event.start_date).toLocaleDateString()} |{' '}
+                      {new Date(event.start_date).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Typography>
+
+                    <Typography variant="body1" gutterBottom>
+                      💰 KES {event.price}
+                    </Typography>
+
+                    <Typography variant="body1" gutterBottom>
+                      👥 Registered: {event.registeredCount || 0}
+                    </Typography>
+
+                    <Box sx={{ mt: 2 }}>
                       <MuiButton
-                        size="small"
+                        href={`/event/${event.id}`}
+                        variant="outlined"
+                        color="primary"
+                        sx={{ mr: 1 }}
+                      >
+                        More Details
+                      </MuiButton>
+
+                      <MuiButton
+                        onClick={() => handleEditClick(event)}
                         variant="contained"
                         color="primary"
                         sx={{ mr: 1 }}
-                        onClick={() => handleEditClick(event)}
                       >
                         Edit
                       </MuiButton>
+
                       <MuiButton
-                        size="small"
+                        onClick={() => handleDeleteEvent(event.id)}
                         variant="outlined"
                         color="error"
-                        onClick={() => handleDeleteEvent(event.id)}
                       >
                         Delete
                       </MuiButton>
                     </Box>
-                  </Paper>
+                  </CardContent>
                 </Grid>
-              ))
-            ) : (
-              <Grid item xs={12}>
-                <Typography>No events found</Typography>
               </Grid>
-            )}
+            </Card>
           </Grid>
-        </CardContent>
-      </Card>
+        ))
+      ) : (
+        <Grid item xs={12}>
+          <Typography align="center">No events found</Typography>
+        </Grid>
+      )}
+    </Grid>
+  </CardContent>
+</Card>
 
       {/* Live Leaderboard */}
       <Card sx={{ mb: 4 }}>
