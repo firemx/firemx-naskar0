@@ -95,7 +95,10 @@ const AdminDashboard = () => {
 
   // Setup WebSocket connection
   useEffect(() => {
-    const socket = io('http://107.152.35.103:5000');
+    const socket = io('http://107.152.35.103:5000', {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+    });
 
     socket.on('connect', () => {
       console.log('Connected to real-time updates');
