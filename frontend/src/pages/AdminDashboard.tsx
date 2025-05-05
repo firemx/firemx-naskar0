@@ -23,6 +23,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  CardMedia,
 } from '@mui/material';
 
 // Chart.js for Graphs
@@ -85,8 +86,8 @@ const AdminDashboard = () => {
         });
         setLeaderboard(leaderRes.data);
       } catch (err) {
-        console.error('Failed to fetch data');
-      }
+        console.warn('Leaderboard data not available yet');
+        setLeaderboard([]);
     };
 
     fetchData();
