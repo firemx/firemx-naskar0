@@ -1,26 +1,28 @@
 // backend/routes/eventRoute.js
 const express = require('express');
+const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 const {
-  getEventById,
-  listAllEvents,
   createNewEvent,
+  listAllEvents,
+  getEventById,
   updateEvent,
   deleteEvent,
-  getUpcomingEvents,
+  getUpcomingEvents, // ✅ Import added
 } = require('../controllers/eventController');
 
 const router = express.Router();
 
-// Public routes
-router.get('/:id', getEventById); // 👈 Public route
-router.get('/', listAllEvents);
-router.get('/upcoming', getUpcomingEvents);
-
-// Protected routes
+// 🔐 All routes are protected
 router.use(protect);
 
-router.post('/register', createNewEvent);
-router.put('/:id', updateEvent);
-router.delete('/:id', deleteEvent);
+// CRUD Routes (Admin only)
+router.post('/register', authorizeRoles('admin'), createNewEvent);
+router.get('/', listAllEvents);
+router.get('/:id', getEventById);
+router.put('/:id', authorizeRoles('admin'), updateEvent);
+router.delete('/:id', authorizeRoles('admin'), deleteEvent);
+
+// ✅ New Route: Get Upcoming Events (Accessible to all authenticated users)
+router.get('/upcoming', getUpcomingEvents); // URL: GET /api/events/upcoming
 
 module.exports = router;
