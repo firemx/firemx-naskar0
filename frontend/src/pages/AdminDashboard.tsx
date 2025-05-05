@@ -91,7 +91,7 @@ const AdminDashboard = () => {
     };
 
     fetchData();
-  }, [])};
+  }, []};
 
   // Setup WebSocket connection
   useEffect(() => {
