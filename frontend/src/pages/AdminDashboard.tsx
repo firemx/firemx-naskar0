@@ -530,6 +530,23 @@ const AdminDashboard = () => {
             onChange={handleInputChange}
             value={newEvent.price}
           />
+          <TextField
+            margin="dense"
+            label="Upload Image"
+            type="file"
+            fullWidth
+            variant="outlined"
+            onChange={(e) => {
+              const file = e.target.files[0];
+                if (file) {
+                 const reader = new FileReader();
+                reader.onload = (e) => {
+               setNewEvent({ ...newEvent, imageUrl: e.target?.result as string });
+             };
+                 reader.readAsDataURL(file);
+             }
+            }}
+        />
         </DialogContent>
         <DialogActions>
           <MuiButton onClick={() => setOpenModal(false)}>Cancel</MuiButton>

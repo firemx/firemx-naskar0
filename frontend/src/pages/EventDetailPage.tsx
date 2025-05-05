@@ -6,13 +6,14 @@ import {
   Box,
   Card,
   CardContent,
-  Button,
   Grid,
+  Button,
   Divider,
-  Avatar,
-  Chip
+  Chip,
+  Avatar
 } from '@mui/material';
 import axios from 'axios';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Event {
   id: number;
@@ -22,46 +23,53 @@ interface Event {
   end_date: string;
   location: string;
   price: number;
-  distance: string;
+  distance?: string;
   registered_count: number;
-  imageUrl?: string;
+  image_url?: string;
 }
 
-const EventDetailPage = ({ id }: { id: number }) => {
+const EventDetailPage = () => {
+  const { id } = useParams(); // Get dynamic ID from URL
+  const navigate = useNavigate();
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const eventId = parseInt(id as string, 10);
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const res = await axios.get(`http://107.152.35.103:5000/api/events/${id}`);
+        const res = await axios.get(`http://107.152.35.103:5000/api/events/${eventId}`);
         setEvent(res.data);
       } catch (err) {
-        console.error('Failed to load event');
+        console.error('Failed to load event', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [id]);
-
-  if (loading || !event) {
-    return <Typography>Loading event...</Typography>;
-  }
+  }, [eventId]);
 
   const handleRegister = () => {
-    const token = localStorage.getItem('token');
-
     if (!token) {
-      // Redirect to Google login with redirect URL to payment
-      const redirectUrl = encodeURIComponent(`http://107.152.35.103:5173/event/${id}/register`);
+      const redirectUrl = encodeURIComponent(`http://107.152.35.103:5173/event/${eventId}/register`);
       window.location.href = `http://107.152.35.103:5000/api/auth/google?redirect=${redirectUrl}`;
       return;
     }
 
-    window.location.href = `/event/${id}/register`;
+    navigate(`/event/${eventId}/register`);
   };
+
+  if (loading || !event) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Typography>Loading event...</Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -71,7 +79,7 @@ const EventDetailPage = ({ id }: { id: number }) => {
           <Grid item xs={12} md={6}>
             <Box
               component="img"
-              src={event.imageUrl || 'https://via.placeholder.com/600x400?text=Event+Image'}
+              src={event.image_url || 'https://via.placeholder.com/600x400?text=Event+Image'}
               alt={event.title}
               sx={{
                 width: '100%',
@@ -130,15 +138,28 @@ const EventDetailPage = ({ id }: { id: number }) => {
                 KES {event.price}
               </Typography>
 
-              <Button
-                variant="contained"
-                color="primary"
-                fullWidth
-                onClick={handleRegister}
-                sx={{ mt: 2 }}
-              >
-                Register & Pay
-              </Button>
+              {/* Conditional Register Button */}
+              {token ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  onClick={handleRegister}
+                  sx={{ mt: 2 }}
+                >
+                  Register & Pay
+                </Button>
+              ) : (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  onClick={handleRegister}
+                  sx={{ mt: 2 }}
+                >
+                  Login to Register
+                </Button>
+              )}
             </CardContent>
           </Grid>
         </Grid>
@@ -149,7 +170,6 @@ const EventDetailPage = ({ id }: { id: number }) => {
         <Typography align="center" sx={{ pt: 2 }}>
           🗺️ Map of event location coming soon
         </Typography>
-        {/* Replace this later with actual map */}
       </Box>
     </Container>
   );
