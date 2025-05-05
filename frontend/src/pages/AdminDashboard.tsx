@@ -65,33 +65,31 @@ const AdminDashboard = () => {
   });
   const [currentEvent, setCurrentEvent] = useState(null);
 
-  // Fetch initial data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-
-        const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setUsers(userRes.data);
-
-        const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setEvents(eventRes.data);
-
-        const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setLeaderboard(leaderRes.data);
-      } catch (err) {
-        console.warn('Leaderboard data not available yet');
-        setLeaderboard([]);
-    };
-
-    fetchData();
-  }, []};
+    // Fetch initial data
+    useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setUsers(userRes.data);
+  
+          const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setEvents(eventRes.data);
+  
+          const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          setLeaderboard(leaderRes.data);
+        } catch (err) {
+          console.error('Failed to fetch data');
+        }
+      };
+      fetchData();
+    }, []);
 
   // Setup WebSocket connection
   useEffect(() => {
