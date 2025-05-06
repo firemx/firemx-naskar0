@@ -39,7 +39,7 @@ const EventsPage = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get('/api/events/upcoming');
+        const res = await axios.get('http://107.152.35.103:5000/api/events/upcoming');
         setEvents(res.data.events || []);
       } catch (err) {
         console.error('Failed to load events');
