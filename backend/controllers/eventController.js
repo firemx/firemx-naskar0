@@ -127,14 +127,15 @@ const deleteEvent = async (req, res) => {
 /**
  * ✅ New Function: Get Upcoming Events
  */
+// backend/controllers/eventController.js
 const getUpcomingEvents = async (req, res) => {
   try {
     const [rows] = await pool.query(
       'SELECT * FROM events WHERE start_date > NOW() ORDER BY start_date ASC'
     );
-
-    res.json({ events: rows }); // 👈 Wrap response in { events: [...] }
+    res.json({ events: rows });
   } catch (err) {
+    console.error('Error fetching upcoming events:', err);
     res.status(500).json({ message: 'Server error fetching upcoming events' });
   }
 };
