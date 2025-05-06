@@ -37,7 +37,7 @@ const Login = () => {
         setError(data.message || 'Login failed');
         return;
       }
-  
+      localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
       window.location.href = '/dashboard';
     } catch (err) {

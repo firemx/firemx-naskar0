@@ -1,34 +1,32 @@
-import React from 'react';
+// frontend/src/App.tsx
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
-// Pages
-import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import LiveStream from './pages/LiveStream';
-import AdminDashboard from './pages/AdminDashboard';
-import LeaderboardPage from './pages/LeaderboardPage';
-import PreviousEventsPage from './pages/PreviousEventsPage';
-import MediaPRPage from './pages/MediaPRPage';
-import EventDetailPage from './pages/EventDetailPage';
 import Register from './pages/Register';
-import Events from './pages/Events'; 
+import Dashboard from './pages/Dashboard';
+import Events from './pages/Events';
+import EventDetailPage from './pages/EventDetailPage';
+import AdminDashboard from './pages/AdminDashboard';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/live" element={<LiveStream />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/previous-events" element={<PreviousEventsPage />} />
-        <Route path="/media-pr" element={<MediaPRPage />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/events" element={<Events />} />
         <Route path="/event/:id" element={<EventDetailPage />} />
-        <Route path="/Register" element={<Register />} />
-        <Route path="/Events" element={<Events />} />
+
+        {/* Authenticated Users Only */}
+        <Route path="/dashboard" element={<ProtectedRoute />}>
+          <Route index element={<Dashboard />} />
+        </Route>
+
+        {/* Admin Users Only */}
+        <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']} />}>
+          <Route index element={<AdminDashboard />} />
+        </Route>
       </Routes>
     </Router>
   );

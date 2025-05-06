@@ -12,19 +12,16 @@ const {
 
 const router = express.Router();
 
-// 🔓 Public route: Allow anyone to view an event
-router.get('/:id', getEventById); // 👈 Moved before global protect middleware
+// ✅ Public routes - No authentication needed
+router.get('/:id', getEventById);            // View single event
+router.get('/', listAllEvents);              // List all events
+router.get('/upcoming', getUpcomingEvents);  // Upcoming events list
 
-// 🔐 All other routes are protected
-router.use(protect);
+// 🔐 Admin-only routes
+router.use(protect); // All remaining routes are protected
 
-// CRUD Routes (Admin only)
 router.post('/register', authorizeRoles('admin'), createNewEvent);
-router.get('/', listAllEvents);
 router.put('/:id', authorizeRoles('admin'), updateEvent);
 router.delete('/:id', authorizeRoles('admin'), deleteEvent);
-
-// ✅ New Route: Get Upcoming Events
-router.get('/upcoming', getUpcomingEvents);
 
 module.exports = router;
