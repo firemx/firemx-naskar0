@@ -1,3 +1,4 @@
+// frontend/src/pages/AdminDashboard.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -23,8 +24,24 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  CardMedia,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Divider,
 } from '@mui/material';
+
+// Icons
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
+import FacebookIcon from '@mui/icons-material/Facebook';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import TikTokIcon from '@mui/icons-material/MusicNote'; // Placeholder for TikTok
 
 // Chart.js for Graphs
 import { Line } from 'react-chartjs-2';
@@ -61,35 +78,38 @@ const AdminDashboard = () => {
     startDate: '',
     endDate: '',
     location: '',
-    price: ''
+    price: '',
+    imageUrl: ''
   });
   const [currentEvent, setCurrentEvent] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false); // For mobile/right drawer
 
-    // Fetch initial data
-    useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const token = localStorage.getItem('token');
-          const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setUsers(userRes.data);
-  
-          const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setEvents(eventRes.data);
-  
-          const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          setLeaderboard(leaderRes.data);
-        } catch (err) {
-          console.error('Failed to fetch data');
-        }
-      };
-      fetchData();
-    }, []);
+  // Fetch initial data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUsers(userRes.data);
+
+        const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setEvents(eventRes.data);
+
+        const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setLeaderboard(leaderRes.data);
+      } catch (err) {
+        console.error('Failed to fetch data');
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Setup WebSocket connection
   useEffect(() => {
@@ -107,17 +127,17 @@ const AdminDashboard = () => {
     });
 
     socket.on('eventUpdated', (updatedEvent) => {
-      setEvents(events.map(e => e.id === updatedEvent.id ? updatedEvent : e));
+      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
     });
 
     socket.on('eventDeleted', ({ id }) => {
-      setEvents(events.filter(e => e.id !== id));
+      setEvents(events.filter((e) => e.id !== id));
     });
 
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [events]);
 
   // Handle input changes – Create Event
   const handleInputChange = (e) => {
@@ -128,13 +148,18 @@ const AdminDashboard = () => {
   // Submit new event
   const handleSubmitEvent = async () => {
     const token = localStorage.getItem('token');
-
     if (!token) {
       alert('You are not logged in');
       return;
     }
 
-    if (!newEvent.title || !newEvent.startDate || !newEvent.endDate || !newEvent.location || !newEvent.price) {
+    if (
+      !newEvent.title ||
+      !newEvent.startDate ||
+      !newEvent.endDate ||
+      !newEvent.location ||
+      !newEvent.price
+    ) {
       alert('Please fill all required fields');
       return;
     }
@@ -161,7 +186,8 @@ const AdminDashboard = () => {
         startDate: '',
         endDate: '',
         location: '',
-        price: ''
+        price: '',
+        imageUrl: ''
       });
       setOpenModal(false);
     } catch (error) {
@@ -227,12 +253,17 @@ const AdminDashboard = () => {
   // Suspend user
   const suspendUser = async (userId) => {
     const token = localStorage.getItem('token');
-    try {
-      await axios.put(`http://107.152.35.103:5000/api/admin/users/${userId}/suspend`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
 
-      setUsers(users.map(u => u.id === userId ? { ...u, suspended: true } : u));
+    try {
+      await axios.put(
+        `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: true } : u));
     } catch (error) {
       console.error('Failed to suspend user', error);
       alert('Failed to suspend user');
@@ -242,12 +273,13 @@ const AdminDashboard = () => {
   // Delete user
   const deleteUser = async (userId) => {
     const token = localStorage.getItem('token');
+
     try {
       await axios.delete(`http://107.152.35.103:5000/api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsers(users.filter(u => u.id !== userId));
+      setUsers(users.filter((u) => u.id !== userId));
     } catch (error) {
       console.error('Failed to delete user', error);
       alert('Failed to delete user');
@@ -271,293 +303,246 @@ const AdminDashboard = () => {
     responsive: true,
     plugins: {
       legend: { position: 'top' },
-      title: { display: true, text: 'Monthly Ticket Sales' }
-    }
+      title: { display: true, text: 'Monthly Ticket Sales' },
+    },
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Admin Dashboard</Typography>
+    <>
+      {/* Admin Navbar */}
+      <AppBar position="static" color="primary">
+        <Toolbar>
+          {/* Logo on Left */}
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            Skating Admin
+          </Typography>
 
-      {/* Users Section */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Typography variant="h6">Users</Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Suspended</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.id}</TableCell>
-                    <TableCell>{user.full_name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell>{user.suspended ? 'Yes' : 'No'}</TableCell>
-                    <TableCell>
-                      <MuiButton
-                        onClick={() => !user.suspended && suspendUser(user.id)}
-                        disabled={user.suspended}
-                        color="warning"
-                        size="small"
-                        variant="contained"
-                        sx={{ mr: 1 }}
-                      >
-                        Suspend
-                      </MuiButton>
-                      <MuiButton
-                        onClick={() => deleteUser(user.id)}
-                        color="error"
-                        size="small"
-                        variant="contained"
-                      >
-                        Delete
-                      </MuiButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+          {/* Hamburger Menu Icon on Right */}
+          <IconButton edge="end" color="inherit" aria-label="menu" onClick={() => setDrawerOpen(true)}>
+            <MenuIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
 
-      {/* Events Section */}
-<Card sx={{ mb: 4 }}>
-  <CardContent>
-    <Box display="flex" justifyContent="space-between" alignItems="center">
-      <Typography variant="h6">Events</Typography>
-      <MuiButton onClick={() => setOpenModal(true)} variant="contained">Add New Event</MuiButton>
-    </Box>
-
-    <Grid container spacing={3} sx={{ mt: 1 }}>
-      {events.length > 0 ? (
-        events.map((event) => (
-          <Grid item xs={12} key={event.id}>
-            <Card elevation={3}>
-              <Grid container>
-                {/* Left side: Image Placeholder */}
-                <Grid item xs={12} md={4}>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image="https://via.placeholder.com/400x200?text=Event+Image"
-                    alt={event.title}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                </Grid>
-
-                {/* Right side: Event Info */}
-                <Grid item xs={12} md={8}>
-                  <CardContent>
-                    <Typography variant="h5" gutterBottom>
-                      {event.title}
-                    </Typography>
-
-                    <Typography variant="body1" gutterBottom>
-                      📅{' '}
-                      {new Date(event.start_date).toLocaleDateString()} |{' '}
-                      {new Date(event.start_date).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Typography>
-
-                    <Typography variant="body1" gutterBottom>
-                      💰 KES {event.price}
-                    </Typography>
-
-                    <Typography variant="body1" gutterBottom>
-                      👥 Registered: {event.registeredCount || 0}
-                    </Typography>
-
-                    <Box sx={{ mt: 2 }}>
-                      <MuiButton
-                        href={`/event/${event.id}`}
-                        variant="outlined"
-                        color="primary"
-                        sx={{ mr: 1 }}
-                      >
-                        More Details
-                      </MuiButton>
-
-                      <MuiButton
-                        onClick={() => handleEditClick(event)}
-                        variant="contained"
-                        color="primary"
-                        sx={{ mr: 1 }}
-                      >
-                        Edit
-                      </MuiButton>
-
-                      <MuiButton
-                        onClick={() => handleDeleteEvent(event.id)}
-                        variant="outlined"
-                        color="error"
-                      >
-                        Delete
-                      </MuiButton>
-                    </Box>
-                  </CardContent>
-                </Grid>
-              </Grid>
-            </Card>
-          </Grid>
-        ))
-      ) : (
-        <Grid item xs={12}>
-          <Typography align="center">No events found</Typography>
-        </Grid>
-      )}
-    </Grid>
-  </CardContent>
-</Card>
-
-      {/* Live Leaderboard */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Typography variant="h6">Live Leaderboard</Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Skater</TableCell>
-                  <TableCell align="right">Score</TableCell>
-                  <TableCell align="right">Votes</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {leaderboard.map((entry) => (
-                  <TableRow key={entry.skater_id}>
-                    <TableCell>{entry.full_name}</TableCell>
-                    <TableCell align="right">{entry.score}</TableCell>
-                    <TableCell align="right">{entry.votes}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-
-      {/* Ticket Sales Chart */}
-      <Card sx={{ mb: 4 }}>
-        <CardContent>
-          <Typography variant="h6">Ticket Sales Overview</Typography>
-          <Box height={300}>
-            <Line data={chartData} options={chartOptions} />
+      {/* Side Drawer Menu */}
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        <Box sx={{ width: 250, padding: 2, backgroundColor: '#fff', height: '100%' }}>
+          <Box display="flex" justifyContent="flex-end">
+            <IconButton onClick={() => setDrawerOpen(false)}>
+              <CloseIcon />
+            </IconButton>
           </Box>
-        </CardContent>
-      </Card>
+          <Divider />
 
-      {/* Event Creation Modal */}
-      <Dialog open={openModal} onClose={() => setOpenModal(false)}>
-        <DialogTitle>Add New Event</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Event Title"
-            type="text"
-            fullWidth
-            variant="outlined"
-            name="title"
-            onChange={handleInputChange}
-            value={newEvent.title}
-          />
-          <TextField
-            margin="dense"
-            label="Description"
-            type="text"
-            fullWidth
-            variant="outlined"
-            name="description"
-            onChange={handleInputChange}
-            value={newEvent.description}
-          />
-          <TextField
-            margin="dense"
-            label="Start Date"
-            type="datetime-local"
-            fullWidth
-            variant="outlined"
-            name="startDate"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            onChange={handleInputChange}
-            value={newEvent.startDate}
-          />
-          <TextField
-            margin="dense"
-            label="End Date"
-            type="datetime-local"
-            fullWidth
-            variant="outlined"
-            name="endDate"
-            InputLabelProps={{
-              shrink: true,
-            }}
-            onChange={handleInputChange}
-            value={newEvent.endDate}
-          />
-          <TextField
-            margin="dense"
-            label="Location"
-            type="text"
-            fullWidth
-            variant="outlined"
-            name="location"
-            onChange={handleInputChange}
-            value={newEvent.location}
-          />
-          <TextField
-            margin="dense"
-            label="Price"
-            type="number"
-            fullWidth
-            variant="outlined"
-            name="price"
-            onChange={handleInputChange}
-            value={newEvent.price}
-          />
-          <TextField
-            margin="dense"
-            label="Upload Image"
-            type="file"
-            fullWidth
-            variant="outlined"
-            onChange={(e) => {
-              const file = e.target.files[0];
-                if (file) {
-                 const reader = new FileReader();
-                reader.onload = (e) => {
-               setNewEvent({ ...newEvent, imageUrl: e.target?.result as string });
-             };
-                 reader.readAsDataURL(file);
-             }
-            }}
-        />
-        </DialogContent>
-        <DialogActions>
-          <MuiButton onClick={() => setOpenModal(false)}>Cancel</MuiButton>
-          <MuiButton onClick={handleSubmitEvent} variant="contained">Create Event</MuiButton>
-        </DialogActions>
-      </Dialog>
+          <List>
+            {['Add Event', 'Users', 'Payments', 'Log Out'].map((text) => (
+              <ListItem key={text} disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    if (text === 'Log Out') {
+                      localStorage.removeItem('token');
+                      localStorage.removeItem('user');
+                      window.location.href = '/login';
+                    } else if (text === 'Add Event') {
+                      setOpenModal(true);
+                    }
+                    setDrawerOpen(false);
+                  }}
+                >
+                  <ListItemText primary={text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
 
-      {/* Event Edit Modal */}
-      {currentEvent && (
-        <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
-          <DialogTitle>Edit Event</DialogTitle>
+      {/* Main Content */}
+      <Container maxWidth="lg" sx={{ mt: 8, pt: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Admin Dashboard
+        </Typography>
+
+        {/* Users Section */}
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6">Users</Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell>Suspended</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>{user.id}</TableCell>
+                      <TableCell>{user.full_name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                      <TableCell>{user.suspended ? 'Yes' : 'No'}</TableCell>
+                      <TableCell>
+                        <MuiButton
+                          onClick={() => !user.suspended && suspendUser(user.id)}
+                          disabled={user.suspended}
+                          color="warning"
+                          size="small"
+                          variant="contained"
+                          sx={{ mr: 1 }}
+                        >
+                          Suspend
+                        </MuiButton>
+                        <MuiButton
+                          onClick={() => deleteUser(user.id)}
+                          color="error"
+                          size="small"
+                          variant="contained"
+                        >
+                          Delete
+                        </MuiButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+
+        {/* Events Section */}
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6">Events</Typography>
+              <MuiButton onClick={() => setOpenModal(true)} variant="contained">
+                Add New Event
+              </MuiButton>
+            </Box>
+            <Grid container spacing={3} sx={{ mt: 1 }}>
+              {events.length > 0 ? (
+                events.map((event) => (
+                  <Grid item xs={12} key={event.id}>
+                    <Card elevation={3}>
+                      <Grid container>
+                        {/* Left side: Image Placeholder */}
+                        <Grid item xs={12} md={4}>
+                          <Box
+                            component="img"
+                            src={event.imageUrl || 'https://via.placeholder.com/400x200?text=Event+Image'}
+                            alt={event.title}
+                            sx={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        </Grid>
+                        {/* Right side: Event Info */}
+                        <Grid item xs={12} md={8}>
+                          <CardContent>
+                            <Typography variant="h5" gutterBottom>
+                              {event.title}
+                            </Typography>
+                            <Typography variant="body1" gutterBottom>
+                              📅{' '}
+                              {new Date(event.start_date).toLocaleDateString()} |{' '}
+                              {new Date(event.start_date).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </Typography>
+                            <Typography variant="body1" gutterBottom>
+                              💰 KES {event.price}
+                            </Typography>
+                            <Typography variant="body1" gutterBottom>
+                              👥 Registered: {event.registeredCount || 0}
+                            </Typography>
+                            <Box sx={{ mt: 2 }}>
+                              <MuiButton
+                                href={`/event/${event.id}`}
+                                variant="outlined"
+                                color="primary"
+                                sx={{ mr: 1 }}
+                              >
+                                More Details
+                              </MuiButton>
+                              <MuiButton
+                                onClick={() => handleEditClick(event)}
+                                variant="contained"
+                                color="primary"
+                                sx={{ mr: 1 }}
+                              >
+                                Edit
+                              </MuiButton>
+                              <MuiButton
+                                onClick={() => handleDeleteEvent(event.id)}
+                                variant="outlined"
+                                color="error"
+                              >
+                                Delete
+                              </MuiButton>
+                            </Box>
+                          </CardContent>
+                        </Grid>
+                      </Grid>
+                    </Card>
+                  </Grid>
+                ))
+              ) : (
+                <Grid item xs={12}>
+                  <Typography align="center">No events found</Typography>
+                </Grid>
+              )}
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Live Leaderboard */}
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6">Live Leaderboard</Typography>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Skater</TableCell>
+                    <TableCell align="right">Score</TableCell>
+                    <TableCell align="right">Votes</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {leaderboard.map((entry) => (
+                    <TableRow key={entry.skater_id}>
+                      <TableCell>{entry.full_name}</TableCell>
+                      <TableCell align="right">{entry.score}</TableCell>
+                      <TableCell align="right">{entry.votes}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+
+        {/* Ticket Sales Chart */}
+        <Card sx={{ mb: 4 }}>
+          <CardContent>
+            <Typography variant="h6">Ticket Sales Overview</Typography>
+            <Box height={300}>
+              <Line data={chartData} options={chartOptions} />
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Event Creation Modal */}
+        <Dialog open={openModal} onClose={() => setOpenModal(false)}>
+          <DialogTitle>Add New Event</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -567,13 +552,8 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="title"
-              defaultValue={currentEvent.title}
-              onChange={(e) =>
-                setCurrentEvent({
-                  ...currentEvent,
-                  title: e.target.value,
-                })
-              }
+              onChange={handleInputChange}
+              value={newEvent.title}
             />
             <TextField
               margin="dense"
@@ -582,13 +562,8 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="description"
-              defaultValue={currentEvent.description}
-              onChange={(e) =>
-                setCurrentEvent({
-                  ...currentEvent,
-                  description: e.target.value,
-                })
-              }
+              onChange={handleInputChange}
+              value={newEvent.description}
             />
             <TextField
               margin="dense"
@@ -600,15 +575,8 @@ const AdminDashboard = () => {
               InputLabelProps={{
                 shrink: true,
               }}
-              defaultValue={
-                new Date(currentEvent.start_date).toISOString().slice(0, 16)
-              }
-              onChange={(e) =>
-                setCurrentEvent({
-                  ...currentEvent,
-                  start_date: e.target.value + ':00Z',
-                })
-              }
+              onChange={handleInputChange}
+              value={newEvent.startDate}
             />
             <TextField
               margin="dense"
@@ -620,15 +588,8 @@ const AdminDashboard = () => {
               InputLabelProps={{
                 shrink: true,
               }}
-              defaultValue={
-                new Date(currentEvent.end_date).toISOString().slice(0, 16)
-              }
-              onChange={(e) =>
-                setCurrentEvent({
-                  ...currentEvent,
-                  end_date: e.target.value + ':00Z'
-                })
-              }
+              onChange={handleInputChange}
+              value={newEvent.endDate}
             />
             <TextField
               margin="dense"
@@ -637,13 +598,8 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="location"
-              defaultValue={currentEvent.location}
-              onChange={(e) =>
-                setCurrentEvent({
-                  ...currentEvent,
-                  location: e.target.value,
-                })
-              }
+              onChange={handleInputChange}
+              value={newEvent.location}
             />
             <TextField
               margin="dense"
@@ -652,22 +608,152 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="price"
-              defaultValue={currentEvent.price}
-              onChange={(e) =>
-                setCurrentEvent({
-                  ...currentEvent,
-                  price: e.target.value,
-                })
-              }
+              onChange={handleInputChange}
+              value={newEvent.price}
+            />
+            <TextField
+              margin="dense"
+              label="Upload Image"
+              type="file"
+              fullWidth
+              variant="outlined"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    setNewEvent({ ...newEvent, imageUrl: e.target?.result as string });
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
             />
           </DialogContent>
           <DialogActions>
-            <MuiButton onClick={() => setEditModalOpen(false)}>Cancel</MuiButton>
-            <MuiButton onClick={handleUpdateEvent} variant="contained">Save Changes</MuiButton>
+            <MuiButton onClick={() => setOpenModal(false)}>Cancel</MuiButton>
+            <MuiButton onClick={handleSubmitEvent} variant="contained">
+              Create Event
+            </MuiButton>
           </DialogActions>
         </Dialog>
-      )}
-    </Container>
+
+        {/* Event Edit Modal */}
+        {currentEvent && (
+          <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Event Title"
+                type="text"
+                fullWidth
+                variant="outlined"
+                name="title"
+                defaultValue={currentEvent.title}
+                onChange={(e) =>
+                  setCurrentEvent({
+                    ...currentEvent,
+                    title: e.target.value,
+                  })
+                }
+              />
+              <TextField
+                margin="dense"
+                label="Description"
+                type="text"
+                fullWidth
+                variant="outlined"
+                name="description"
+                defaultValue={currentEvent.description}
+                onChange={(e) =>
+                  setCurrentEvent({
+                    ...currentEvent,
+                    description: e.target.value,
+                  })
+                }
+              />
+              <TextField
+                margin="dense"
+                label="Start Date"
+                type="datetime-local"
+                fullWidth
+                variant="outlined"
+                name="startDate"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                defaultValue={
+                  new Date(currentEvent.start_date).toISOString().slice(0, 16)
+                }
+                onChange={(e) =>
+                  setCurrentEvent({
+                    ...currentEvent,
+                    start_date: e.target.value + ':00Z',
+                  })
+                }
+              />
+              <TextField
+                margin="dense"
+                label="End Date"
+                type="datetime-local"
+                fullWidth
+                variant="outlined"
+                name="endDate"
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                defaultValue={
+                  new Date(currentEvent.end_date).toISOString().slice(0, 16)
+                }
+                onChange={(e) =>
+                  setCurrentEvent({
+                    ...currentEvent,
+                    end_date: e.target.value + ':00Z',
+                  })
+                }
+              />
+              <TextField
+                margin="dense"
+                label="Location"
+                type="text"
+                fullWidth
+                variant="outlined"
+                name="location"
+                defaultValue={currentEvent.location}
+                onChange={(e) =>
+                  setCurrentEvent({
+                    ...currentEvent,
+                    location: e.target.value,
+                  })
+                }
+              />
+              <TextField
+                margin="dense"
+                label="Price"
+                type="number"
+                fullWidth
+                variant="outlined"
+                name="price"
+                defaultValue={currentEvent.price}
+                onChange={(e) =>
+                  setCurrentEvent({
+                    ...currentEvent,
+                    price: e.target.value,
+                  })
+                }
+              />
+            </DialogContent>
+            <DialogActions>
+              <MuiButton onClick={() => setEditModalOpen(false)}>Cancel</MuiButton>
+              <MuiButton onClick={handleUpdateEvent} variant="contained">
+                Save Changes
+              </MuiButton>
+            </DialogActions>
+          </Dialog>
+        )}
+      </Container>
+    </>
   );
 };
 
