@@ -263,7 +263,7 @@ const AdminDashboard = () => {
         }
       );
 
-      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: true } : u));
+      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: true } : u)));
     } catch (error) {
       console.error('Failed to suspend user', error);
       alert('Failed to suspend user');
