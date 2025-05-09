@@ -312,7 +312,7 @@ const AdminDashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       // Update local state
       setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
     } catch (error) {
@@ -785,7 +785,7 @@ const AdminDashboard = () => {
         if (selectedUserId !== null) {
           suspendUserToggle(selectedUserId, isSuspendAction);
         }
-        setConfirmOpen(false);
+        setConfirmOpen(true);
       }}
       color="error"
       variant="contained"
