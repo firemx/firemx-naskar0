@@ -251,22 +251,23 @@ const AdminDashboard = () => {
   };
 
   // Suspend user
-  const suspendUser = async (userId) => {
+  // Toggle suspend status
+  const suspendUserToggle = async (userId, isCurrentlySuspended) => {
     const token = localStorage.getItem('token');
-
     try {
-      await axios.put(
-        `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    const endpoint = isCurrentlySuspended
+      ? `http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend`
+      : `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`;
 
-      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: true } : u)));
-    } catch (error) {
-      console.error('Failed to suspend user', error);
-      alert('Failed to suspend user');
+    await axios.put(endpoint, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Update local state
+    setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
+     } catch (error) {
+      console.error('Failed to update suspension status', error);
+      alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
     }
   };
 
@@ -388,16 +389,16 @@ const AdminDashboard = () => {
                       <TableCell>{user.role}</TableCell>
                       <TableCell>{user.suspended ? 'Yes' : 'No'}</TableCell>
                       <TableCell>
-                        <MuiButton
-                          onClick={() => !user.suspended && suspendUser(user.id)}
-                          disabled={user.suspended}
-                          color="warning"
-                          size="small"
-                          variant="contained"
+                      <MuiButton
+                        onClick={() => suspendUserToggle(user.id, user.suspended)}
+                         color={user.suspended ? 'success' : 'warning'}
+                         size="small"
+                         variant="contained"
                           sx={{ mr: 1 }}
-                        >
-                          Suspend
+                            >
+                          {user.suspended ? 'Unsuspend' : 'Suspend'}
                         </MuiButton>
+                        
                         <MuiButton
                           onClick={() => deleteUser(user.id)}
                           color="error"
