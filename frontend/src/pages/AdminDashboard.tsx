@@ -81,7 +81,7 @@ const AdminDashboard = () => {
   const [drawerOpen, setDrawerOpen] = useState(false); // For mobile/right drawer
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  const [isSuspendAction, setIsSuspendAction] = useState(true); // true = suspend, false = unsuspend
+  const [isSuspendAction, setIsSuspendAction] = useState<boolean>(true); // true = suspend, false = unsuspend
 
   // Fetch initial data
   useEffect(() => {
@@ -250,42 +250,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Suspend/Unsuspend User Toggle
-  const suspendUserToggle = async (userId, isCurrentlySuspended) => {
-    const token = localStorage.getItem('token');
-
-    try {
-      const endpoint = isCurrentlySuspended
-        ? `http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend`
-        : `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`;
-
-      await axios.put(endpoint, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      // Notify user via email
-      await axios.post(
-        'http://107.152.35.103:5000/api/email/send',
-        {
-          userId,
-          subject: isCurrentlySuspended ? 'Your Account Has Been Unsuspended' : 'Your Account Has Been Suspended',
-          message: isCurrentlySuspended
-            ? 'Good news! Your account has been reactivated. You can log in again.'
-            : 'Your account has been suspended. Please contact support for more info.',
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      // Update local state
-      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u)));
-    } catch (error) {
-      console.error('Failed to update suspension status', error);
-      alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
-    }
-  };
-
   // Delete user
   const deleteUser = async (userId) => {
     const token = localStorage.getItem('token');
@@ -321,6 +285,40 @@ const AdminDashboard = () => {
       legend: { position: 'top' },
       title: { display: true, text: 'Monthly Ticket Sales' },
     },
+  };
+
+  const suspendUserToggle = async (userId, isCurrentlySuspended) => {
+    const token = localStorage.getItem('token');
+    try {
+      const endpoint = isCurrentlySuspended
+        ? 'http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend'
+        : 'http://107.152.35.103:5000/api/admin/users/${userId}/suspend';
+  
+      await axios.put(endpoint, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  
+      // Notify user via email
+      await axios.post(
+        'http://107.152.35.103:5000/api/email/send',
+        {
+          userId,
+          subject: isCurrentlySuspended ? 'Your Account Has Been Unsuspended' : 'Your Account Has Been Suspended',
+          message: isCurrentlySuspended
+            ? 'Good news! Your account has been reactivated.'
+            : 'Your account has been suspended.',
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      // Update local state
+      setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
+    } catch (error) {
+      console.error('Failed to update suspension status', error);
+      alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
+    }
   };
 
   return (
@@ -772,30 +770,30 @@ const AdminDashboard = () => {
 
         {/* Confirmation Dialog */}
         <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-          <DialogTitle>{isSuspendAction ? 'Suspend User' : 'Unsuspend User'}</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Are you sure you want to {isSuspendAction ? 'suspend' : 'unsuspend'} this user?
-            </Typography>
-          </DialogContent>
-          <DialogActions>
-            <MuiButton onClick={() => setConfirmOpen(false)} color="primary">
-              Cancel
-            </MuiButton>
-            <MuiButton
-              onClick={async () => {
-                if (selectedUserId !== null) {
-                  await suspendUserToggle(selectedUserId, isSuspendAction);
-                }
-                setConfirmOpen(false);
-              }}
-              color="error"
-              variant="contained"
-            >
-              Confirm
-            </MuiButton>
-          </DialogActions>
-        </Dialog>
+  <DialogTitle>{isSuspendAction ? 'Suspend User' : 'Unsuspend User'}</DialogTitle>
+  <DialogContent>
+    <Typography>
+      Are you sure you want to {isSuspendAction ? 'suspend' : 'unsuspend'} this user?
+    </Typography>
+  </DialogContent>
+  <DialogActions>
+    <MuiButton onClick={() => setConfirmOpen(false)} color="primary">
+      Cancel
+    </MuiButton>
+    <MuiButton
+      onClick={() => {
+        if (selectedUserId !== null) {
+          suspendUserToggle(selectedUserId, isSuspendAction);
+        }
+        setConfirmOpen(false);
+      }}
+      color="error"
+      variant="contained"
+    >
+      Confirm
+    </MuiButton>
+  </DialogActions>
+</Dialog>
       </Container>
     </>
   );
