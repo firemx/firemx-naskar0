@@ -38,10 +38,6 @@ import {
 // Icons
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import TwitterIcon from '@mui/icons-material/Twitter';
-import TikTokIcon from '@mui/icons-material/MusicNote'; // Placeholder for TikTok
 
 // Chart.js for Graphs
 import { Line } from 'react-chartjs-2';
@@ -130,7 +126,7 @@ const AdminDashboard = () => {
     });
 
     socket.on('eventUpdated', (updatedEvent) => {
-      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
+      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e));
     });
 
     socket.on('eventDeleted', ({ id }) => {
@@ -151,6 +147,7 @@ const AdminDashboard = () => {
   // Submit new event
   const handleSubmitEvent = async () => {
     const token = localStorage.getItem('token');
+
     if (!token) {
       alert('You are not logged in');
       return;
@@ -253,22 +250,37 @@ const AdminDashboard = () => {
     }
   };
 
-  // Suspend user
-  // Toggle suspend status
+  // Suspend/Unsuspend User Toggle
   const suspendUserToggle = async (userId, isCurrentlySuspended) => {
     const token = localStorage.getItem('token');
+
     try {
-    const endpoint = isCurrentlySuspended
-      ? `http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend`
-      : `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`;
+      const endpoint = isCurrentlySuspended
+        ? `http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend`
+        : `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`;
 
-    await axios.put(endpoint, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      await axios.put(endpoint, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    // Update local state
-    setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
-     } catch (error) {
+      // Notify user via email
+      await axios.post(
+        'http://107.152.35.103:5000/api/email/send',
+        {
+          userId,
+          subject: isCurrentlySuspended ? 'Your Account Has Been Unsuspended' : 'Your Account Has Been Suspended',
+          message: isCurrentlySuspended
+            ? 'Good news! Your account has been reactivated. You can log in again.'
+            : 'Your account has been suspended. Please contact support for more info.',
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      // Update local state
+      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u)));
+    } catch (error) {
       console.error('Failed to update suspension status', error);
       alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
     }
@@ -330,14 +342,20 @@ const AdminDashboard = () => {
 
       {/* Side Drawer Menu */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Box sx={{ width: 250, padding: 2, backgroundColor: '#fff', height: '100%' }}>
+        <Box
+          sx={{
+            width: 250,
+            padding: 2,
+            backgroundColor: '#fff',
+            height: '100%',
+          }}
+        >
           <Box display="flex" justifyContent="flex-end">
             <IconButton onClick={() => setDrawerOpen(false)}>
               <CloseIcon />
             </IconButton>
           </Box>
           <Divider />
-
           <List>
             {['Add Event', 'Users', 'Payments', 'Log Out'].map((text) => (
               <ListItem key={text} disablePadding>
@@ -392,16 +410,19 @@ const AdminDashboard = () => {
                       <TableCell>{user.role}</TableCell>
                       <TableCell>{user.suspended ? 'Yes' : 'No'}</TableCell>
                       <TableCell>
-                      <MuiButton
-                        onClick={() => suspendUserToggle(user.id, user.suspended)}
-                         color={user.suspended ? 'success' : 'warning'}
-                         size="small"
-                         variant="contained"
+                        <MuiButton
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            setIsSuspendAction(!user.suspended);
+                            setConfirmOpen(true);
+                          }}
+                          color={user.suspended ? 'success' : 'warning'}
+                          size="small"
+                          variant="contained"
                           sx={{ mr: 1 }}
-                            >
+                        >
                           {user.suspended ? 'Unsuspend' : 'Suspend'}
                         </MuiButton>
-                        
                         <MuiButton
                           onClick={() => deleteUser(user.id)}
                           color="error"
@@ -506,69 +527,7 @@ const AdminDashboard = () => {
             </Grid>
           </CardContent>
         </Card>
-{/* Confirmation Dialog */}
-<Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-  <DialogTitle>{isSuspendAction ? 'Suspend User' : 'Unsuspend User'}</DialogTitle>
-  <DialogContent>
-    <Typography>
-      Are you sure you want to {isSuspendAction ? 'suspend' : 'unsuspend'} this user?
-    </Typography>
-  </DialogContent>
-  <DialogActions>
-    <MuiButton onClick={() => setConfirmOpen(false)} color="primary">
-      Cancel
-    </MuiButton>
-    <MuiButton
-  onClick={() => {
-    setSelectedUserId(user.id);
-    setIsSuspendAction(!user.suspended);
-    setConfirmOpen(true);
-  }}
-  color={user.suspended ? 'success' : 'warning'}
-  size="small"
-  variant="contained"
-  sx={{ mr: 1 }}
->
-  {user.suspended ? 'Unsuspend' : 'Suspend'}
-</MuiButton>
 
-// Toggle suspend status + send email
-const suspendUserToggle = async (userId, isCurrentlySuspended) => {
-  const token = localStorage.getItem('token');
-  try {
-    const endpoint = isCurrentlySuspended
-      ? `http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend`
-      : `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`;
-
-    await axios.put(endpoint, {}, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    // Notify user via email
-    await axios.post(
-      'http://107.152.35.103:5000/api/email/send',
-      {
-        userId,
-        subject: isCurrentlySuspended ? 'Your Account Has Been Unsuspended' : 'Your Account Has Been Suspended',
-        message: isCurrentlySuspended
-          ? 'Good news! Your account has been reactivated. You can log in again.'
-          : 'Your account has been suspended. Please contact support for more info.',
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    // Update local state
-    setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
-  } catch (error) {
-    console.error('Failed to update suspension status', error);
-    alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
-  }
-};
-
-  </DialogActions>
-</Dialog>
         {/* Live Leaderboard */}
         <Card sx={{ mb: 4 }}>
           <CardContent>
@@ -638,9 +597,7 @@ const suspendUserToggle = async (userId, isCurrentlySuspended) => {
               fullWidth
               variant="outlined"
               name="startDate"
-              InputLabelProps={{
-                shrink: true,
-              }}
+              InputLabelProps={{ shrink: true }}
               onChange={handleInputChange}
               value={newEvent.startDate}
             />
@@ -651,9 +608,7 @@ const suspendUserToggle = async (userId, isCurrentlySuspended) => {
               fullWidth
               variant="outlined"
               name="endDate"
-              InputLabelProps={{
-                shrink: true,
-              }}
+              InputLabelProps={{ shrink: true }}
               onChange={handleInputChange}
               value={newEvent.endDate}
             />
@@ -746,9 +701,7 @@ const suspendUserToggle = async (userId, isCurrentlySuspended) => {
                 fullWidth
                 variant="outlined"
                 name="startDate"
-                InputLabelProps={{
-                  shrink: true,
-                }}
+                InputLabelProps={{ shrink: true }}
                 defaultValue={
                   new Date(currentEvent.start_date).toISOString().slice(0, 16)
                 }
@@ -766,9 +719,7 @@ const suspendUserToggle = async (userId, isCurrentlySuspended) => {
                 fullWidth
                 variant="outlined"
                 name="endDate"
-                InputLabelProps={{
-                  shrink: true,
-                }}
+                InputLabelProps={{ shrink: true }}
                 defaultValue={
                   new Date(currentEvent.end_date).toISOString().slice(0, 16)
                 }
@@ -818,6 +769,33 @@ const suspendUserToggle = async (userId, isCurrentlySuspended) => {
             </DialogActions>
           </Dialog>
         )}
+
+        {/* Confirmation Dialog */}
+        <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+          <DialogTitle>{isSuspendAction ? 'Suspend User' : 'Unsuspend User'}</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to {isSuspendAction ? 'suspend' : 'unsuspend'} this user?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <MuiButton onClick={() => setConfirmOpen(false)} color="primary">
+              Cancel
+            </MuiButton>
+            <MuiButton
+              onClick={async () => {
+                if (selectedUserId !== null) {
+                  await suspendUserToggle(selectedUserId, isSuspendAction);
+                }
+                setConfirmOpen(false);
+              }}
+              color="error"
+              variant="contained"
+            >
+              Confirm
+            </MuiButton>
+          </DialogActions>
+        </Dialog>
       </Container>
     </>
   );
