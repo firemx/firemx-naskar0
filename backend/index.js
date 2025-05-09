@@ -62,6 +62,7 @@ app.use('/api/registrations', registrationRoutes);
 app.use('/api', mpesaRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api', commentRoutes);
+app.use('/api', require('./routes/emailRoute'));
 
 // DB Connection
 const { connectDB } = require('./config/db');
