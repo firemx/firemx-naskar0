@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 
-// Material UI
+// Material UI Components
 import {
   Container,
   Typography,
@@ -79,28 +79,46 @@ const AdminDashboard = () => {
   });
   const [currentEvent, setCurrentEvent] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false); // For mobile/right drawer
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
+
+        if (!token) {
+          setError('Authentication required. Please log in.');
+          setLoading(false);
+          window.location.href = '/login';
+          return;
+        }
+
         const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUsers(userRes.data);
 
         const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setEvents(eventRes.data);
 
         const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setLeaderboard(leaderRes.data);
+
+        setUsers(userRes.data || []);
+        setEvents(eventRes.data || []);
+        setLeaderboard(leaderRes.data || []);
+
       } catch (err) {
-        console.error('Failed to fetch data');
+        console.error('Failed to load data', err.response?.data || err.message);
+        setError(err.response?.data?.message || 'Failed to load dashboard data');
+        setUsers([]);
+        setEvents([]);
+        setLeaderboard([]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -119,11 +137,11 @@ const AdminDashboard = () => {
     });
 
     socket.on('eventCreated', (createdEvent) => {
-      setEvents((prevEvents) => [createdEvent, ...prevEvents]);
+      setEvents((prev) => [createdEvent, ...prev]);
     });
 
     socket.on('eventUpdated', (updatedEvent) => {
-      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
+      setEvents(events.map((e) => e.id === updatedEvent.id ? updatedEvent : e));
     });
 
     socket.on('eventDeleted', ({ id }) => {
@@ -147,6 +165,7 @@ const AdminDashboard = () => {
 
     if (!token) {
       alert('You are not logged in');
+      window.location.href = '/login';
       return;
     }
 
@@ -203,6 +222,12 @@ const AdminDashboard = () => {
   const handleUpdateEvent = async () => {
     const token = localStorage.getItem('token');
 
+    if (!token) {
+      alert('Session expired. Please log in again.');
+      window.location.href = '/login';
+      return;
+    }
+
     try {
       await axios.put(
         `http://107.152.35.103:5000/api/events/${currentEvent.id}`,
@@ -232,6 +257,12 @@ const AdminDashboard = () => {
   const handleDeleteEvent = async (eventId) => {
     const token = localStorage.getItem('token');
 
+    if (!token) {
+      alert('Session expired. Please log in again.');
+      window.location.href = '/login';
+      return;
+    }
+
     try {
       await axios.delete(`http://107.152.35.103:5000/api/events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -251,6 +282,12 @@ const AdminDashboard = () => {
   const suspendUserToggle = async (userId, isCurrentlySuspended) => {
     const token = localStorage.getItem('token');
 
+    if (!token) {
+      alert('Session expired. Please log in again.');
+      window.location.href = '/login';
+      return;
+    }
+
     try {
       const endpoint = isCurrentlySuspended
         ? `http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend`
@@ -260,11 +297,28 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Show success message
-      alert(isCurrentlySuspended ? 'User has been unsuspended!' : 'User has been suspended!');
-      
+      // Notify user via email
+      const user = users.find(u => u.id === userId);
+      await axios.post(
+        'http://107.152.35.103:5000/api/email/send',
+        {
+          userId,
+          subject: isCurrentlySuspended
+            ? 'Your Account Has Been Unsuspended'
+            : 'Your Account Has Been Suspended',
+          message: isCurrentlySuspended
+            ? 'Good news! Your account has been reactivated.'
+            : 'Your account has been suspended.',
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       // Update local state
-      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u)));
+      setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
+
+      alert(isCurrentlySuspended ? 'User unsuspended successfully' : 'User suspended successfully');
     } catch (error) {
       console.error('Failed to update suspension status', error);
       alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
@@ -275,12 +329,20 @@ const AdminDashboard = () => {
   const deleteUser = async (userId) => {
     const token = localStorage.getItem('token');
 
+    if (!token) {
+      alert('Session expired. Please log in again.');
+      window.location.href = '/login';
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+
     try {
       await axios.delete(`http://107.152.35.103:5000/api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsers(users.filter((u) => u.id !== userId));
+      setUsers(users.filter(u => u.id !== userId));
     } catch (error) {
       console.error('Failed to delete user', error);
       alert('Failed to delete user');
@@ -308,6 +370,24 @@ const AdminDashboard = () => {
     },
   };
 
+  if (loading && !error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 8 }}>
+        <Typography variant="h6" align="center">Loading dashboard...</Typography>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 8 }}>
+        <Typography color="error" align="center">
+          {error}
+        </Typography>
+      </Container>
+    );
+  }
+
   return (
     <>
       {/* Admin Navbar */}
@@ -316,7 +396,6 @@ const AdminDashboard = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             Skating Admin
           </Typography>
-
           <IconButton edge="end" color="inherit" onClick={() => setDrawerOpen(true)}>
             <MenuIcon />
           </IconButton>
@@ -325,7 +404,14 @@ const AdminDashboard = () => {
 
       {/* Side Drawer Menu */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <Box sx={{ width: 250, padding: 2, backgroundColor: '#fff', height: '100%' }}>
+        <Box
+          sx={{
+            width: 250,
+            padding: 2,
+            backgroundColor: '#fff',
+            height: '100%',
+          }}
+        >
           <Box display="flex" justifyContent="flex-end">
             <IconButton onClick={() => setDrawerOpen(false)}>
               <CloseIcon />
@@ -343,6 +429,8 @@ const AdminDashboard = () => {
                       window.location.href = '/login';
                     } else if (text === 'Add Event') {
                       setOpenModal(true);
+                    } else if (text === 'Users') {
+                      window.location.href = '/admin/users';
                     }
                     setDrawerOpen(false);
                   }}
@@ -378,34 +466,42 @@ const AdminDashboard = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.id}</TableCell>
-                      <TableCell>{user.full_name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
-                      <TableCell>{user.suspended ? 'Yes' : 'No'}</TableCell>
-                      <TableCell>
-                        <MuiButton
-                          onClick={() => suspendUserToggle(user.id, user.suspended)}
-                          color={user.suspended ? 'success' : 'warning'}
-                          size="small"
-                          variant="contained"
-                          sx={{ mr: 1 }}
-                        >
-                          {user.suspended ? 'Unsuspend' : 'Suspend'}
-                        </MuiButton>
-                        <MuiButton
-                          onClick={() => deleteUser(user.id)}
-                          color="error"
-                          size="small"
-                          variant="contained"
-                        >
-                          Delete
-                        </MuiButton>
+                  {users.length > 0 ? (
+                    users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.id}</TableCell>
+                        <TableCell>{user.full_name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.role}</TableCell>
+                        <TableCell>{user.suspended ? 'Yes' : 'No'}</TableCell>
+                        <TableCell>
+                          <MuiButton
+                            onClick={() => suspendUserToggle(user.id, user.suspended)}
+                            color={user.suspended ? 'success' : 'warning'}
+                            size="small"
+                            variant="contained"
+                            sx={{ mr: 1 }}
+                          >
+                            {user.suspended ? 'Unsuspend' : 'Suspend'}
+                          </MuiButton>
+                          <MuiButton
+                            onClick={() => deleteUser(user.id)}
+                            color="error"
+                            size="small"
+                            variant="contained"
+                          >
+                            Delete
+                          </MuiButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        No users found.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
