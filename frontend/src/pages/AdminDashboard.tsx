@@ -103,9 +103,9 @@ const AdminDashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
   
-       // const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
-       //   headers: { Authorization: `Bearer ${token}` },
-       // });
+        const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
   
         setUsers(userRes.data || []);
         setEvents(eventRes.data || []);
@@ -372,6 +372,8 @@ const AdminDashboard = () => {
     },
   };
 
+
+  
   if (loading && !error) {
     return (
       <Container maxWidth="lg" sx={{ mt: 8 }}>
@@ -390,6 +392,8 @@ const AdminDashboard = () => {
     );
   }
 
+
+  
   return (
     <>
       {/* Admin Navbar */}
@@ -844,4 +848,25 @@ const AdminDashboard = () => {
   );
 };
 
+return (
+  <Container maxWidth="lg" sx={{ mt: 8 }}>
+    {/* Users Section */}
+    <Card sx={{ mb: 4 }}>
+      <CardContent>
+        <Typography variant="h6">Users</Typography>
+        {users.length > 0 ? (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>...</TableHead>
+              <TableBody>...</TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Typography>No users found.</Typography>
+        )}
+      </CardContent>
+    </Card>
+    ...
+  </Container>
+);
 export default AdminDashboard;
