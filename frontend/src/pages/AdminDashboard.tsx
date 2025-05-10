@@ -264,7 +264,7 @@ const AdminDashboard = () => {
       alert(isCurrentlySuspended ? 'User has been unsuspended!' : 'User has been suspended!');
       
       // Update local state
-      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
+      setUsers(users.map((u) => (u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u)));
     } catch (error) {
       console.error('Failed to update suspension status', error);
       alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
