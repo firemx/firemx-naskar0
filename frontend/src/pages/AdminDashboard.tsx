@@ -291,8 +291,8 @@ const AdminDashboard = () => {
     const token = localStorage.getItem('token');
     try {
       const endpoint = isCurrentlySuspended
-        ? 'http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend'
-        : 'http://107.152.35.103:5000/api/admin/users/${userId}/suspend';
+  ?     `http://107.152.35.103:5000/api/admin/users/${userId}/unsuspend`
+  :     `http://107.152.35.103:5000/api/admin/users/${userId}/suspend`;
   
       await axios.put(endpoint, {}, {
         headers: { Authorization: `Bearer ${token}` },
@@ -780,18 +780,8 @@ const AdminDashboard = () => {
     <MuiButton onClick={() => setConfirmOpen(false)} color="primary">
       Cancel
     </MuiButton>
-    <MuiButton
-      onClick={() => {
-        if (selectedUserId !== null) {
-          suspendUserToggle(selectedUserId, isSuspendAction);
-        }
-        setConfirmOpen(true);
-      }}
-      color="error"
-      variant="contained"
-    >
-      Confirm
-    </MuiButton>
+    
+    
   </DialogActions>
 </Dialog>
       </Container>
