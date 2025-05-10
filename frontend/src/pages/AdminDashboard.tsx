@@ -123,7 +123,7 @@ const AdminDashboard = () => {
     });
 
     socket.on('eventUpdated', (updatedEvent) => {
-      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e));
+      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
     });
 
     socket.on('eventDeleted', ({ id }) => {
