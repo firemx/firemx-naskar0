@@ -28,7 +28,7 @@ function App() {
 
         {/* Admin Users Only */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']} />}>
-          {/* <Route index element={<AdminDashboard />} /> */}
+          <Route index element={<AdminDashboard />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute><AdminUsersPage /></ProtectedRoute>} />
         </Route>
