@@ -103,9 +103,9 @@ const AdminDashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
   
-        const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+       // const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
+       //   headers: { Authorization: `Bearer ${token}` },
+       // });
   
         setUsers(userRes.data || []);
         setEvents(eventRes.data || []);
