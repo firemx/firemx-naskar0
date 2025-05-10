@@ -11,6 +11,8 @@ const router = express.Router();
 router.use(protect);
 router.use(authorizeRoles('admin'));
 
+router.get('/', getAllUsers);
+
 // Suspend User
 router.put('/:id/suspend', suspendUser);
 

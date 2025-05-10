@@ -85,43 +85,45 @@ const AdminDashboard = () => {
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
+  
+      if (!token) {
+        alert('Authentication required. Please log in.');
+        window.location.href = '/login';
+        return;
+      }
+  
       try {
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-          setError('Authentication required. Please log in.');
-          setLoading(false);
-          window.location.href = '/login';
-          return;
-        }
-
         const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         setUsers(userRes.data || []);
         setEvents(eventRes.data || []);
         setLeaderboard(leaderRes.data || []);
-
-      } catch (err) {
-        console.error('Failed to load data', err.response?.data || err.message);
-        setError(err.response?.data?.message || 'Failed to load dashboard data');
-        setUsers([]);
-        setEvents([]);
-        setLeaderboard([]);
-      } finally {
-        setLoading(false);
+  
+      } catch (err: any) {
+        if (err.response?.status === 401) {
+          alert('Session expired. Redirecting to login...');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        } else {
+          console.error('Failed to load dashboard data:', err.message);
+          alert('Failed to load data from server.');
+        }
       }
     };
-
+  
     fetchData();
   }, []);
 
