@@ -63,6 +63,7 @@ app.use('/api', mpesaRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api', commentRoutes);
 app.use('/api', require('./routes/emailRoute'));
+app.use('/api/admin/users', require('./routes/userRoute'));
 
 // DB Connection
 const { connectDB } = require('./config/db');
