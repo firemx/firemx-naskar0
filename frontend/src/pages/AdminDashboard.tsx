@@ -39,7 +39,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
-// Chart.js
+// Chart.js for Graphs
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -89,34 +89,33 @@ const AdminDashboard = () => {
         const token = localStorage.getItem('token');
 
         if (!token) {
-          alert('Authentication required. Please log in.');
+          setError('Authentication required. Please log in.');
           window.location.href = '/login';
           return;
         }
 
-        // Fetch users
         const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUsers(userRes.data);
 
-        // Fetch events
         const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setEvents(eventRes.data);
 
-        // Fetch leaderboard - handle gracefully if it fails
+        let leaderData = [];
         try {
           const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
             headers: { Authorization: `Bearer ${token}` },
           });
-          setLeaderboard(leaderRes.data || []);
-        } catch (err) {
-          console.warn('Leaderboard endpoint not found or unauthorized');
-          setLeaderboard([]); // Set empty array if leaderboard isn't available
+          leaderData = leaderRes.data || [];
+        } catch (leaderError) {
+          console.warn('Leaderboard not available yet');
+          leaderData = [];
         }
 
+        setUsers(userRes.data || []);
+        setEvents(eventRes.data || []);
+        setLeaderboard(leaderData);
       } catch (err: any) {
         if (err.response?.status === 401) {
           alert('Session expired. Redirecting to login...');
@@ -124,7 +123,7 @@ const AdminDashboard = () => {
           localStorage.removeItem('user');
           window.location.href = '/login';
         } else {
-          setError('Failed to load some data from server.');
+          setError('Failed to load dashboard data. Some features may be unavailable.');
         }
       } finally {
         setLoading(false);
@@ -146,11 +145,11 @@ const AdminDashboard = () => {
     });
 
     socket.on('eventCreated', (createdEvent) => {
-      setEvents((prev) => [createdEvent, ...prev]);
+      setEvents((prevEvents) => [createdEvent, ...prevEvents]);
     });
 
     socket.on('eventUpdated', (updatedEvent) => {
-      setEvents(events.map((e) => e.id === updatedEvent.id ? updatedEvent : e));
+      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e));
     });
 
     socket.on('eventDeleted', ({ id }) => {
@@ -174,7 +173,6 @@ const AdminDashboard = () => {
 
     if (!token) {
       alert('You are not logged in');
-      window.location.href = '/login';
       return;
     }
 
@@ -266,12 +264,6 @@ const AdminDashboard = () => {
   const handleDeleteEvent = async (eventId) => {
     const token = localStorage.getItem('token');
 
-    if (!token) {
-      alert('Session expired. Please log in again.');
-      window.location.href = '/login';
-      return;
-    }
-
     try {
       await axios.delete(`http://107.152.35.103:5000/api/events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -326,8 +318,6 @@ const AdminDashboard = () => {
 
       // Update local state
       setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
-
-      alert(isCurrentlySuspended ? 'User unsuspended successfully' : 'User suspended successfully');
     } catch (error) {
       console.error('Failed to update suspension status', error);
       alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
@@ -351,7 +341,7 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsers(users.filter(u => u.id !== userId));
+      setUsers(users.filter((u) => u.id !== userId));
     } catch (error) {
       console.error('Failed to delete user', error);
       alert('Failed to delete user');
@@ -379,8 +369,7 @@ const AdminDashboard = () => {
     },
   };
 
-
-  
+  // Return JSX
   if (loading && !error) {
     return (
       <Container maxWidth="lg" sx={{ mt: 8 }}>
@@ -392,18 +381,63 @@ const AdminDashboard = () => {
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ mt: 8 }}>
-        <Typography color="error" align="center">
-          {error}
-        </Typography>
-        <Typography variant="body2" align="center">
-          Some parts of the dashboard may be unavailable.
-        </Typography>
+        <Typography color="error" align="center">{error}</Typography>
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 8 }}>
+    <Container maxWidth="lg" sx={{ mt: 8, pt: 4 }}>
+      {/* Admin Navbar */}
+      <AppBar position="static" color="primary">
+        <Toolbar>
+          {/* Logo on Left */}
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+            Skating Admin
+          </Typography>
+
+          {/* Hamburger Menu Icon on Right */}
+          <IconButton edge="end" color="inherit" aria-label="menu" onClick={() => setDrawerOpen(true)}>
+            <MenuIcon />
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
+      {/* Side Drawer Menu */}
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        <Box sx={{ width: 250, padding: 2, backgroundColor: '#fff', height: '100%' }}>
+          <Box display="flex" justifyContent="flex-end">
+            <IconButton onClick={() => setDrawerOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <Divider />
+          <List>
+            {['Add Event', 'Users', 'Payments', 'Log Out'].map((text) => (
+              <ListItem key={text} disablePadding>
+                <ListItemButton
+                  onClick={() => {
+                    if (text === 'Log Out') {
+                      localStorage.removeItem('token');
+                      localStorage.removeItem('user');
+                      window.location.href = '/login';
+                    } else if (text === 'Add Event') {
+                      setOpenModal(true);
+                    } else if (text === 'Users') {
+                      window.location.href = '/admin/users';
+                    }
+                    setDrawerOpen(false);
+                  }}
+                >
+                  <ListItemText primary={text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+
+      {/* Main Content */}
       <Typography variant="h4" gutterBottom>
         Admin Dashboard
       </Typography>
@@ -412,21 +446,21 @@ const AdminDashboard = () => {
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Typography variant="h6">Users</Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Suspended</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.length > 0 ? (
-                  users.map((user) => (
+          {users.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell>Suspended</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>{user.id}</TableCell>
                       <TableCell>{user.full_name}</TableCell>
@@ -453,17 +487,13 @@ const AdminDashboard = () => {
                         </MuiButton>
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      No users found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography>No users found.</Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -482,14 +512,20 @@ const AdminDashboard = () => {
                 <Grid item xs={12} key={event.id}>
                   <Card elevation={3}>
                     <Grid container>
+                      {/* Left side: Image Placeholder */}
                       <Grid item xs={12} md={4}>
                         <Box
                           component="img"
                           src={event.imageUrl || 'https://via.placeholder.com/400x200?text=Event+Image'}
                           alt={event.title}
-                          sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
                         />
                       </Grid>
+                      {/* Right side: Event Info */}
                       <Grid item xs={12} md={8}>
                         <CardContent>
                           <Typography variant="h5" gutterBottom>
@@ -553,34 +589,30 @@ const AdminDashboard = () => {
       <Card sx={{ mb: 4 }}>
         <CardContent>
           <Typography variant="h6">Live Leaderboard</Typography>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Skater</TableCell>
-                  <TableCell align="right">Score</TableCell>
-                  <TableCell align="right">Votes</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {leaderboard.length > 0 ? (
-                  leaderboard.map((entry) => (
+          {leaderboard.length > 0 ? (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Skater</TableCell>
+                    <TableCell align="right">Score</TableCell>
+                    <TableCell align="right">Votes</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {leaderboard.map((entry) => (
                     <TableRow key={entry.skater_id}>
                       <TableCell>{entry.full_name}</TableCell>
                       <TableCell align="right">{entry.score}</TableCell>
                       <TableCell align="right">{entry.votes}</TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={3} align="center">
-                      No leaderboard data available.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography>No leaderboard data available.</Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -593,12 +625,104 @@ const AdminDashboard = () => {
           </Box>
         </CardContent>
       </Card>
-    </Container>
-  );
-};
-        {/* Event Creation Modal */}
-        <Dialog open={openModal} onClose={() => setOpenModal(false)}>
-          <DialogTitle>Add New Event</DialogTitle>
+
+      {/* Event Creation Modal */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)}>
+        <DialogTitle>Add New Event</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Event Title"
+            type="text"
+            fullWidth
+            variant="outlined"
+            name="title"
+            onChange={handleInputChange}
+            value={newEvent.title}
+          />
+          <TextField
+            margin="dense"
+            label="Description"
+            type="text"
+            fullWidth
+            variant="outlined"
+            name="description"
+            onChange={handleInputChange}
+            value={newEvent.description}
+          />
+          <TextField
+            margin="dense"
+            label="Start Date"
+            type="datetime-local"
+            fullWidth
+            variant="outlined"
+            name="startDate"
+            InputLabelProps={{ shrink: true }}
+            onChange={handleInputChange}
+            value={newEvent.startDate}
+          />
+          <TextField
+            margin="dense"
+            label="End Date"
+            type="datetime-local"
+            fullWidth
+            variant="outlined"
+            name="endDate"
+            InputLabelProps={{ shrink: true }}
+            onChange={handleInputChange}
+            value={newEvent.endDate}
+          />
+          <TextField
+            margin="dense"
+            label="Location"
+            type="text"
+            fullWidth
+            variant="outlined"
+            name="location"
+            onChange={handleInputChange}
+            value={newEvent.location}
+          />
+          <TextField
+            margin="dense"
+            label="Price"
+            type="number"
+            fullWidth
+            variant="outlined"
+            name="price"
+            onChange={handleInputChange}
+            value={newEvent.price}
+          />
+          <TextField
+            margin="dense"
+            label="Upload Image"
+            type="file"
+            fullWidth
+            variant="outlined"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  setNewEvent({ ...newEvent, imageUrl: e.target?.result as string });
+                };
+                reader.readAsDataURL(file);
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <MuiButton onClick={() => setOpenModal(false)}>Cancel</MuiButton>
+          <MuiButton onClick={handleSubmitEvent} variant="contained">
+            Create Event
+          </MuiButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Event Edit Modal */}
+      {currentEvent && (
+        <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
+          <DialogTitle>Edit Event</DialogTitle>
           <DialogContent>
             <TextField
               autoFocus
@@ -608,8 +732,13 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="title"
-              onChange={handleInputChange}
-              value={newEvent.title}
+              defaultValue={currentEvent.title}
+              onChange={(e) =>
+                setCurrentEvent({
+                  ...currentEvent,
+                  title: e.target.value,
+                })
+              }
             />
             <TextField
               margin="dense"
@@ -618,8 +747,13 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="description"
-              onChange={handleInputChange}
-              value={newEvent.description}
+              defaultValue={currentEvent.description}
+              onChange={(e) =>
+                setCurrentEvent({
+                  ...currentEvent,
+                  description: e.target.value,
+                })
+              }
             />
             <TextField
               margin="dense"
@@ -629,8 +763,17 @@ const AdminDashboard = () => {
               variant="outlined"
               name="startDate"
               InputLabelProps={{ shrink: true }}
-              onChange={handleInputChange}
-              value={newEvent.startDate}
+              defaultValue={
+                currentEvent.start_date
+                  ? new Date(currentEvent.start_date).toISOString().slice(0, 16)
+                  : ''
+              }
+              onChange={(e) =>
+                setCurrentEvent({
+                  ...currentEvent,
+                  start_date: e.target.value + ':00Z',
+                })
+              }
             />
             <TextField
               margin="dense"
@@ -640,8 +783,17 @@ const AdminDashboard = () => {
               variant="outlined"
               name="endDate"
               InputLabelProps={{ shrink: true }}
-              onChange={handleInputChange}
-              value={newEvent.endDate}
+              defaultValue={
+                currentEvent.end_date
+                  ? new Date(currentEvent.end_date).toISOString().slice(0, 16)
+                  : ''
+              }
+              onChange={(e) =>
+                setCurrentEvent({
+                  ...currentEvent,
+                  end_date: e.target.value + ':00Z',
+                })
+              }
             />
             <TextField
               margin="dense"
@@ -650,8 +802,13 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="location"
-              onChange={handleInputChange}
-              value={newEvent.location}
+              defaultValue={currentEvent.location}
+              onChange={(e) =>
+                setCurrentEvent({
+                  ...currentEvent,
+                  location: e.target.value,
+                })
+              }
             />
             <TextField
               margin="dense"
@@ -660,148 +817,25 @@ const AdminDashboard = () => {
               fullWidth
               variant="outlined"
               name="price"
-              onChange={handleInputChange}
-              value={newEvent.price}
-            />
-            <TextField
-              margin="dense"
-              label="Upload Image"
-              type="file"
-              fullWidth
-              variant="outlined"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onload = (e) => {
-                    setNewEvent({ ...newEvent, imageUrl: e.target?.result as string });
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
+              defaultValue={currentEvent.price}
+              onChange={(e) =>
+                setCurrentEvent({
+                  ...currentEvent,
+                  price: e.target.value,
+                })
+              }
             />
           </DialogContent>
           <DialogActions>
-            <MuiButton onClick={() => setOpenModal(false)}>Cancel</MuiButton>
-            <MuiButton onClick={handleSubmitEvent} variant="contained">
-              Create Event
+            <MuiButton onClick={() => setEditModalOpen(false)}>Cancel</MuiButton>
+            <MuiButton onClick={handleUpdateEvent} variant="contained">
+              Save Changes
             </MuiButton>
           </DialogActions>
         </Dialog>
+      )}
 
-        {/* Event Edit Modal */}
-        {currentEvent && (
-          <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
-            <DialogTitle>Edit Event</DialogTitle>
-            <DialogContent>
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Event Title"
-                type="text"
-                fullWidth
-                variant="outlined"
-                name="title"
-                defaultValue={currentEvent.title}
-                onChange={(e) =>
-                  setCurrentEvent({
-                    ...currentEvent,
-                    title: e.target.value,
-                  })
-                }
-              />
-              <TextField
-                margin="dense"
-                label="Description"
-                type="text"
-                fullWidth
-                variant="outlined"
-                name="description"
-                defaultValue={currentEvent.description}
-                onChange={(e) =>
-                  setCurrentEvent({
-                    ...currentEvent,
-                    description: e.target.value,
-                  })
-                }
-              />
-              <TextField
-                margin="dense"
-                label="Start Date"
-                type="datetime-local"
-                fullWidth
-                variant="outlined"
-                name="startDate"
-                InputLabelProps={{ shrink: true }}
-                defaultValue={
-                  new Date(currentEvent.start_date).toISOString().slice(0, 16)
-                }
-                onChange={(e) =>
-                  setCurrentEvent({
-                    ...currentEvent,
-                    start_date: e.target.value + ':00Z',
-                  })
-                }
-              />
-              <TextField
-                margin="dense"
-                label="End Date"
-                type="datetime-local"
-                fullWidth
-                variant="outlined"
-                name="endDate"
-                InputLabelProps={{ shrink: true }}
-                defaultValue={
-                  new Date(currentEvent.end_date).toISOString().slice(0, 16)
-                }
-                onChange={(e) =>
-                  setCurrentEvent({
-                    ...currentEvent,
-                    end_date: e.target.value + ':00Z',
-                  })
-                }
-              />
-              <TextField
-                margin="dense"
-                label="Location"
-                type="text"
-                fullWidth
-                variant="outlined"
-                name="location"
-                defaultValue={currentEvent.location}
-                onChange={(e) =>
-                  setCurrentEvent({
-                    ...currentEvent,
-                    location: e.target.value,
-                  })
-                }
-              />
-              <TextField
-                margin="dense"
-                label="Price"
-                type="number"
-                fullWidth
-                variant="outlined"
-                name="price"
-                defaultValue={currentEvent.price}
-                onChange={(e) =>
-                  setCurrentEvent({
-                    ...currentEvent,
-                    price: e.target.value,
-                  })
-                }
-              />
-            </DialogContent>
-            <DialogActions>
-              <MuiButton onClick={() => setEditModalOpen(false)}>Cancel</MuiButton>
-              <MuiButton onClick={handleUpdateEvent} variant="contained">
-                Save Changes
-              </MuiButton>
-            </DialogActions>
-          </Dialog>
-        )}
-      </Container>
-    </>
+    </Container>
   );
 };
 
