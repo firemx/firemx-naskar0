@@ -392,7 +392,23 @@ const AdminDashboard = () => {
     );
   }
 
-
+  if (!users.length && !events.length && !leaderboard.length) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 8 }}>
+        <Typography variant="h6" align="center">Loading dashboard...</Typography>
+      </Container>
+    );
+  }
+  
+  if (!users.length) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 8 }}>
+        <Typography color="error" align="center">
+          You must be an admin to view this page.
+        </Typography>
+      </Container>
+    );
+  }
   
   return (
     <>
@@ -848,25 +864,4 @@ const AdminDashboard = () => {
   );
 };
 
-return (
-  <Container maxWidth="lg" sx={{ mt: 8 }}>
-    {/* Users Section */}
-    <Card sx={{ mb: 4 }}>
-      <CardContent>
-        <Typography variant="h6">Users</Typography>
-        {users.length > 0 ? (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>...</TableHead>
-              <TableBody>...</TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Typography>No users found.</Typography>
-        )}
-      </CardContent>
-    </Card>
-    ...
-  </Container>
-);
 export default AdminDashboard;
