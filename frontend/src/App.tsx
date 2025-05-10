@@ -8,6 +8,7 @@ import Events from './pages/Events';
 import EventDetailPage from './pages/EventDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminUsersPage from './pages/AdminUsersPage';
 
 function App() {
   return (
@@ -27,7 +28,9 @@ function App() {
 
         {/* Admin Users Only */}
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']} />}>
-          <Route index element={<AdminDashboard />} />
+          {/* <Route index element={<AdminDashboard />} /> */}
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsersPage /></ProtectedRoute>} />
         </Route>
       </Routes>
     </Router>
