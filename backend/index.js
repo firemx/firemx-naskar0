@@ -32,7 +32,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const passport = require('passport');
-require('./config/passport')(passport);
+require('./config/passport');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
