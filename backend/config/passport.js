@@ -5,9 +5,9 @@ const { pool } = require('./db');
 
 // Only keep Google Strategy
 passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: '/api/auth/google/callback'
+    clientID: `275244905240-q1dkacjarongig6k4dusmfolnkukbppc.apps.googleusercontent.com`,
+    clientSecret: `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`,
+    callbackURL: 'http://naskar.kozow.com:5000/api/auth/google/callback'
   },
   async (token, refreshToken, profile, done) => {
     try {
