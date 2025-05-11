@@ -49,10 +49,10 @@ const Login = () => {
     window.location.href = 'http://107.152.35.103/api/auth/google';
   };
 
-  await axios.post('http://107.152.35.103:5000/api/auth/login', {
-    email,
-    password
-  });
+  //await axios.post('http://107.152.35.103:5000/api/auth/login', {
+  //  email,
+  //  password
+  //});
 
   return (
     <Container maxWidth="sm">
