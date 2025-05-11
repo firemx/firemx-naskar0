@@ -50,12 +50,21 @@ router.get('/logout', (req, res) => {
 
 // backend/routes/authRoutes.js
 
-router.post('/login',
-  passport.authenticate('local', { session: false }),
-  (req, res) => {
-    // If authenticated, req.user is available
-    res.json({ message: 'Logged in successfully', user: req.user });
-  }
-);
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.status(401).json({ message: info.message || 'Authentication failed' });
+
+    req.login(user, { session: false }, (err) => {
+      if (err) return next(err);
+
+      res.json({
+        message: 'Login successful',
+        user,
+        token: Buffer.from(JSON.stringify(user)).toString('base64')
+      });
+    });
+  })(req, res, next);
+});
 
 module.exports = router;
