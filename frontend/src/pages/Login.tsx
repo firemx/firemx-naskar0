@@ -49,6 +49,11 @@ const Login = () => {
     window.location.href = 'http://107.152.35.103/api/auth/google';
   };
 
+  await axios.post('http://107.152.35.103:5000/api/auth/login', {
+    email,
+    password
+  });
+
   return (
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ padding: 4, marginTop: 8 }}>

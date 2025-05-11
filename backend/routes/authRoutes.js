@@ -36,16 +36,26 @@ router.get('/logout', (req, res) => {
 });
 
 // Login route (optional local login)
-router.post('/login', (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) return next(err);
-    if (!user) return res.status(401).json(info.message || 'Invalid credentials');
+//router.post('/login', (req, res, next) => {
+  //passport.authenticate('local', (err, user, info) => {
+    //if (err) return next(err);
+    //if (!user) return res.status(401).json(info.message || 'Invalid credentials');
     
-    req.logIn(user, (err) => {
-      if (err) return next(err);
-      return res.json({ message: 'Login successful', user });
-    });
-  })(req, res, next);
-});
+    //req.logIn(user, (err) => {
+     // if (err) return next(err);
+      //return res.json({ message: 'Login successful', user });
+    //});
+  //})(req, res, next);
+//});
+
+// backend/routes/authRoutes.js
+
+router.post('/login',
+  passport.authenticate('local', { session: false }),
+  (req, res) => {
+    // If authenticated, req.user is available
+    res.json({ message: 'Logged in successfully', user: req.user });
+  }
+);
 
 module.exports = router;
