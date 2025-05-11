@@ -12,10 +12,16 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// 📋 Get All Users (Admin Only)
 const getAllUsers = async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT id, full_name, email, role, suspended FROM users');
-    res.json(rows);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'No users found' });
+    }
+
+    res.json(rows); // Sends back all users
   } catch (err) {
     console.error('Error fetching users:', err);
     res.status(500).json({ message: 'Server error' });
@@ -25,7 +31,6 @@ const getAllUsers = async (req, res) => {
 // 🔒 Admin: Suspend User
 const suspendUser = async (req, res) => {
   const { id } = req.params;
-  const token = req.user.token;
 
   try {
     const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
@@ -77,7 +82,7 @@ const unsuspendUser = async (req, res) => {
       from: process.env.EMAIL_USER,
       to: user.email,
       subject: 'Your Account Has Been Unsuspended',
-      text: 'Good news! Your account has been reactivated. You can log in again.',
+      text: 'Good news! Your account has been reactivated.',
     });
 
     res.json({ message: 'User unsuspended successfully' });
@@ -88,6 +93,7 @@ const unsuspendUser = async (req, res) => {
 };
 
 module.exports = {
+  getAllUsers,   // ✅ Exported here
   suspendUser,
   unsuspendUser,
 };
