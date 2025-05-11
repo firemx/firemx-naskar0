@@ -2,6 +2,29 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
+const jwt = require('jsonwebtoken');
+//const { jwtSecret } = require('../config/keys'); // Or define in .env
+
+// Existing routes...
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+router.get('/google/callback',
+  passport.authenticate('google', {
+    failureRedirect: '/login',
+    session: false
+  }),
+  (req, res) => {
+    const payload = {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role,
+    };
+
+    const token = jwt.sign(payload, jwtSecret, { expiresIn: '1h' });
+
+    res.redirect(`http://107.152.35.103:5173/admin?token=${token}`);
+  }
+);
 
 // Google Auth Routes
 router.get('/google',
@@ -34,21 +57,6 @@ router.get('/logout', (req, res) => {
     res.json({ message: 'Logout successful' });
   });
 });
-
-// Login route (optional local login)
-//router.post('/login', (req, res, next) => {
-  //passport.authenticate('local', (err, user, info) => {
-    //if (err) return next(err);
-    //if (!user) return res.status(401).json(info.message || 'Invalid credentials');
-    
-    //req.logIn(user, (err) => {
-     // if (err) return next(err);
-      //return res.json({ message: 'Login successful', user });
-    //});
-  //})(req, res, next);
-//});
-
-// backend/routes/authRoutes.js
 
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {

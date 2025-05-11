@@ -1,7 +1,36 @@
 const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const LocalStrategy = require('passport-local').Strategy;
 const pool = require('./db');
-require('dotenv').config();
+
+// Local Strategy – Email/Password Login
+passport.use(new LocalStrategy({
+    usernameField: 'email',
+    passwordField: 'password'
+  },
+  async (email, password, done) => {
+    try {
+      const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+
+      if (rows.length === 0) {
+        return done(null, false, { message: 'User not found' });
+      }
+
+      const user = rows[0];
+
+      // Compare password (replace this with real bcrypt check later)
+      if (user.password !== password) {
+        return done(null, false, { message: 'Incorrect password' });
+      }
+
+      return done(null, user);
+    } catch (err) {
+      return done(err, false);
+    }
+  }
+));
+
+// Google OAuth Strategy
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -28,10 +57,12 @@ passport.use(new GoogleStrategy({
   }
 ));
 
+// Serialize user
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
+// Deserialize user
 passport.deserializeUser(async (id, done) => {
   const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
   done(null, rows[0]);
