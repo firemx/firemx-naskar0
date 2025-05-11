@@ -33,6 +33,8 @@ import {
   ListItemButton,
   ListItemText,
   Divider,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 
 // Icons
@@ -80,17 +82,30 @@ const AdminDashboard = () => {
   const [currentEvent, setCurrentEvent] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false); // For mobile/right drawer
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackMessage, setSnackMessage] = useState('');
+  const [snackSeverity, setSnackSeverity] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+
+  const showSnack = (message: string, severity: 'success' | 'error' | 'info' | 'warning') => {
+    setSnackMessage(message);
+    setSnackSeverity(severity);
+    setSnackOpen(true);
+  };
+
+  const closeSnack = () => {
+    setSnackOpen(false);
+  };
 
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
-
         if (!token) {
-          setError('Authentication required. Please log in.');
-          window.location.href = '/login';
+          showSnack('Authentication required. Redirecting...', 'error');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
           return;
         }
 
@@ -108,9 +123,8 @@ const AdminDashboard = () => {
             headers: { Authorization: `Bearer ${token}` },
           });
           leaderData = leaderRes.data || [];
-        } catch (leaderError) {
-          console.warn('Leaderboard not available yet');
-          leaderData = [];
+        } catch (err) {
+          console.warn('Leaderboard not available');
         }
 
         setUsers(userRes.data || []);
@@ -118,12 +132,14 @@ const AdminDashboard = () => {
         setLeaderboard(leaderData);
       } catch (err: any) {
         if (err.response?.status === 401) {
-          alert('Session expired. Redirecting to login...');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+          showSnack('Session expired. Logging you out...', 'error');
+          setTimeout(() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          }, 1500);
         } else {
-          setError('Failed to load dashboard data. Some features may be unavailable.');
+          showSnack('Failed to load dashboard data.', 'error');
         }
       } finally {
         setLoading(false);
@@ -149,7 +165,7 @@ const AdminDashboard = () => {
     });
 
     socket.on('eventUpdated', (updatedEvent) => {
-      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
+      setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e));
     });
 
     socket.on('eventDeleted', ({ id }) => {
@@ -172,7 +188,10 @@ const AdminDashboard = () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      alert('You are not logged in');
+      showSnack('You are not logged in', 'error');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
       return;
     }
 
@@ -183,7 +202,7 @@ const AdminDashboard = () => {
       !newEvent.location ||
       !newEvent.price
     ) {
-      alert('Please fill all required fields');
+      showSnack('Please fill all required fields', 'warning');
       return;
     }
 
@@ -213,9 +232,13 @@ const AdminDashboard = () => {
         imageUrl: ''
       });
       setOpenModal(false);
-    } catch (error) {
+      showSnack('Event created successfully!', 'success');
+    } catch (error: any) {
       console.error('Failed to create event', error.response?.data || error.message);
-      alert(`Failed to create event: ${error.response?.data?.message || error.message}`);
+      showSnack(
+        `Failed to create event: ${error.response?.data?.message || error.message}`,
+        'error'
+      );
     }
   };
 
@@ -230,8 +253,10 @@ const AdminDashboard = () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      alert('Session expired. Please log in again.');
-      window.location.href = '/login';
+      showSnack('Session expired. Please log in again.', 'error');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
       return;
     }
 
@@ -254,15 +279,24 @@ const AdminDashboard = () => {
 
       setEvents(res.data);
       setEditModalOpen(false);
+      showSnack('Event updated successfully!', 'success');
     } catch (error) {
       console.error('Failed to update event', error);
-      alert('Failed to update event');
+      showSnack('Failed to update event', 'error');
     }
   };
 
   // Handle delete event
   const handleDeleteEvent = async (eventId) => {
     const token = localStorage.getItem('token');
+
+    if (!token) {
+      showSnack('Session expired. Please log in again.', 'error');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
+      return;
+    }
 
     try {
       await axios.delete(`http://107.152.35.103:5000/api/events/${eventId}`, {
@@ -273,9 +307,10 @@ const AdminDashboard = () => {
       socket.emit('eventDeleted', { id: eventId });
 
       setEvents(events.filter((e) => e.id !== eventId));
+      showSnack('Event deleted successfully', 'success');
     } catch (error) {
       console.error('Failed to delete event', error);
-      alert('Failed to delete event');
+      showSnack('Failed to delete event', 'error');
     }
   };
 
@@ -284,8 +319,10 @@ const AdminDashboard = () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      alert('Session expired. Please log in again.');
-      window.location.href = '/login';
+      showSnack('Session expired. Redirecting to login...', 'error');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
       return;
     }
 
@@ -318,9 +355,14 @@ const AdminDashboard = () => {
 
       // Update local state
       setUsers(users.map(u => u.id === userId ? { ...u, suspended: !isCurrentlySuspended } : u));
+
+      showSnack(
+        isCurrentlySuspended ? 'User unsuspended successfully!' : 'User suspended successfully!',
+        'success'
+      );
     } catch (error) {
       console.error('Failed to update suspension status', error);
-      alert(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`);
+      showSnack(`Failed to ${isCurrentlySuspended ? 'unsuspend' : 'suspend'} user`, 'error');
     }
   };
 
@@ -328,13 +370,15 @@ const AdminDashboard = () => {
   const deleteUser = async (userId) => {
     const token = localStorage.getItem('token');
 
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+
     if (!token) {
-      alert('Session expired. Please log in again.');
-      window.location.href = '/login';
+      showSnack('Session expired. Redirecting to login...', 'error');
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
       return;
     }
-
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
 
     try {
       await axios.delete(`http://107.152.35.103:5000/api/admin/users/${userId}`, {
@@ -342,9 +386,10 @@ const AdminDashboard = () => {
       });
 
       setUsers(users.filter((u) => u.id !== userId));
+      showSnack('User deleted successfully!', 'success');
     } catch (error) {
       console.error('Failed to delete user', error);
-      alert('Failed to delete user');
+      showSnack('Failed to delete user', 'error');
     }
   };
 
@@ -370,18 +415,10 @@ const AdminDashboard = () => {
   };
 
   // Return JSX
-  if (loading && !error) {
+  if (loading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 8 }}>
         <Typography variant="h6" align="center">Loading dashboard...</Typography>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container maxWidth="lg" sx={{ mt: 8 }}>
-        <Typography color="error" align="center">{error}</Typography>
       </Container>
     );
   }
@@ -764,9 +801,7 @@ const AdminDashboard = () => {
               name="startDate"
               InputLabelProps={{ shrink: true }}
               defaultValue={
-                currentEvent.start_date
-                  ? new Date(currentEvent.start_date).toISOString().slice(0, 16)
-                  : ''
+                new Date(currentEvent.start_date).toISOString().slice(0, 16)
               }
               onChange={(e) =>
                 setCurrentEvent({
@@ -784,9 +819,7 @@ const AdminDashboard = () => {
               name="endDate"
               InputLabelProps={{ shrink: true }}
               defaultValue={
-                currentEvent.end_date
-                  ? new Date(currentEvent.end_date).toISOString().slice(0, 16)
-                  : ''
+                new Date(currentEvent.end_date).toISOString().slice(0, 16)
               }
               onChange={(e) =>
                 setCurrentEvent({
@@ -835,6 +868,17 @@ const AdminDashboard = () => {
         </Dialog>
       )}
 
+      {/* Snackbar for Notifications */}
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={3000}
+        onClose={closeSnack}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={closeSnack} severity={snackSeverity} sx={{ width: '100%' }}>
+          {snackMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
