@@ -12,6 +12,16 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const getAllUsers = async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT id, full_name, email, role, suspended FROM users');
+    res.json(rows);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // 🔒 Admin: Suspend User
 const suspendUser = async (req, res) => {
   const { id } = req.params;
