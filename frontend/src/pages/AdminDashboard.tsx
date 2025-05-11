@@ -1,3 +1,4 @@
+// frontend/src/pages/AdminDashboard.tsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
@@ -61,60 +62,22 @@ ChartJS.register(
   Legend
 );
 
-// Type Definitions
-interface User {
-  id: number;
-  full_name: string;
-  email: string;
-  role: string;
-  suspended: boolean;
-}
-
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-  location: string;
-  price: number;
-  imageUrl?: string;
-  registeredCount?: number;
-}
-
-interface LeaderboardEntry {
-  skater_id: number;
-  full_name: string;
-  score: number;
-  votes: number;
-}
-
-interface EventForm {
-  title: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  location: string;
-  price: string;
-  imageUrl?: string;
-}
-
 const AdminDashboard = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [openModal, setOpenModal] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [newEvent, setNewEvent] = useState<EventForm>({
+  const [newEvent, setNewEvent] = useState({
     title: '',
     description: '',
     startDate: '',
     endDate: '',
     location: '',
     price: '',
-    imageUrl: '',
+    imageUrl: ''
   });
-  const [currentEvent, setCurrentEvent] = useState<Event | null>(null);
+  const [currentEvent, setCurrentEvent] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false); // For mobile/right drawer
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -139,7 +102,7 @@ const AdminDashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        let leaderData: LeaderboardEntry[] = [];
+        let leaderData = [];
         try {
           const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
             headers: { Authorization: `Bearer ${token}` },
@@ -181,15 +144,15 @@ const AdminDashboard = () => {
       console.log('Connected to real-time updates');
     });
 
-    socket.on('eventCreated', (createdEvent: Event) => {
+    socket.on('eventCreated', (createdEvent) => {
       setEvents((prevEvents) => [createdEvent, ...prevEvents]);
     });
 
-    socket.on('eventUpdated', (updatedEvent: Event) => {
+    socket.on('eventUpdated', (updatedEvent) => {
       setEvents(events.map((e) => (e.id === updatedEvent.id ? updatedEvent : e)));
     });
 
-    socket.on('eventDeleted', ({ id }: { id: number }) => {
+    socket.on('eventDeleted', ({ id }) => {
       setEvents(events.filter((e) => e.id !== id));
     });
 
@@ -199,45 +162,30 @@ const AdminDashboard = () => {
   }, [events]);
 
   // Handle input changes – Create Event
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewEvent((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // Validate event form
-  const validateForm = (): boolean => {
-    if (!newEvent.title || newEvent.title.length < 3) {
-      alert('Title must be at least 3 characters');
-      return false;
-    }
-    if (!newEvent.startDate || !newEvent.endDate) {
-      alert('Start and end dates are required');
-      return false;
-    }
-    if (new Date(newEvent.startDate) >= new Date(newEvent.endDate)) {
-      alert('End date must be after start date');
-      return false;
-    }
-    if (!newEvent.location) {
-      alert('Location is required');
-      return false;
-    }
-    if (!newEvent.price || Number(newEvent.price) <= 0) {
-      alert('Price must be a positive number');
-      return false;
-    }
-    return true;
+    setNewEvent({ ...newEvent, [name]: value });
   };
 
   // Submit new event
   const handleSubmitEvent = async () => {
     const token = localStorage.getItem('token');
+
     if (!token) {
       alert('You are not logged in');
       return;
     }
 
-    if (!validateForm()) return;
+    if (
+      !newEvent.title ||
+      !newEvent.startDate ||
+      !newEvent.endDate ||
+      !newEvent.location ||
+      !newEvent.price
+    ) {
+      alert('Please fill all required fields');
+      return;
+    }
 
     try {
       const res = await axios.post(
@@ -248,7 +196,7 @@ const AdminDashboard = () => {
         }
       );
 
-      const createdEvent: Event = res.data.event || res.data;
+      const createdEvent = res.data.event || res.data;
 
       // Broadcast via WebSocket
       const socket = io('http://107.152.35.103:5000');
@@ -262,17 +210,17 @@ const AdminDashboard = () => {
         endDate: '',
         location: '',
         price: '',
-        imageUrl: '',
+        imageUrl: ''
       });
       setOpenModal(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to create event', error.response?.data || error.message);
       alert(`Failed to create event: ${error.response?.data?.message || error.message}`);
     }
   };
 
   // Handle edit click
-  const handleEditClick = (event: Event) => {
+  const handleEditClick = (event) => {
     setCurrentEvent(event);
     setEditModalOpen(true);
   };
@@ -286,8 +234,6 @@ const AdminDashboard = () => {
       window.location.href = '/login';
       return;
     }
-
-    if (!currentEvent) return;
 
     try {
       await axios.put(
@@ -315,7 +261,7 @@ const AdminDashboard = () => {
   };
 
   // Handle delete event
-  const handleDeleteEvent = async (eventId: number) => {
+  const handleDeleteEvent = async (eventId) => {
     const token = localStorage.getItem('token');
 
     try {
@@ -334,7 +280,7 @@ const AdminDashboard = () => {
   };
 
   // Toggle suspend status + send email
-  const suspendUserToggle = async (userId: number, isCurrentlySuspended: boolean) => {
+  const suspendUserToggle = async (userId, isCurrentlySuspended) => {
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -379,7 +325,7 @@ const AdminDashboard = () => {
   };
 
   // Delete user
-  const deleteUser = async (userId: number) => {
+  const deleteUser = async (userId) => {
     const token = localStorage.getItem('token');
 
     if (!token) {
@@ -418,7 +364,7 @@ const AdminDashboard = () => {
   const chartOptions = {
     responsive: true,
     plugins: {
-      legend: { position: 'top' as const },
+      legend: { position: 'top' },
       title: { display: true, text: 'Monthly Ticket Sales' },
     },
   };
@@ -753,8 +699,8 @@ const AdminDashboard = () => {
             type="file"
             fullWidth
             variant="outlined"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const file = e.target.files?.[0];
+            onChange={(e) => {
+              const file = e.target.files[0];
               if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -875,7 +821,7 @@ const AdminDashboard = () => {
               onChange={(e) =>
                 setCurrentEvent({
                   ...currentEvent,
-                  price: Number(e.target.value),
+                  price: e.target.value,
                 })
               }
             />
