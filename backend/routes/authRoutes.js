@@ -1,35 +1,51 @@
-// /backend/routes/authRoutes.js
+// backend/routes/authRoutes.js
 const express = require('express');
-const {
-  registerUser,
-  loginUser
-} = require('../controllers/authController');
-
-const { getMe } = require('../controllers/userController');
-const { protect } = require('../middleware/authMiddleware');
-
-// 👇 Add this line
+const router = express.Router();
 const passport = require('passport');
 
-const router = express.Router();
-
-// Public routes
-router.post('/register', registerUser);
-router.post('/login', loginUser);
-
-// Protected route
-router.get('/me', protect, getMe);
-
-// Google OAuth Routes
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-router.get(
-  '/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  (req, res) => {
-    const token = req.user.token || 'fallback_token';
-    res.redirect(`http://localhost:5173/dashboard?token=${token}`);
-  }
+// Google Auth Routes
+router.get('/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email']
+  })
 );
+
+// Google Auth Callback – Must include req, res handler
+router.get('/google/callback',
+  passport.authenticate('google', { 
+    successRedirect: '/api/auth/success',
+    failureRedirect: '/login'
+  })
+);
+
+// Success route after Google login
+router.get('/success', (req, res) => {
+  const user = req.user;
+  res.json({
+    message: 'Logged in successfully!',
+    user
+  });
+});
+
+// Logout route
+router.get('/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) console.error(err);
+    res.json({ message: 'Logout successful' });
+  });
+});
+
+// Login route (optional local login)
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.status(401).json(info.message || 'Invalid credentials');
+    
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      return res.json({ message: 'Login successful', user });
+    });
+  })(req, res, next);
+});
 
 module.exports = router;
