@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-//const { jwtSecret } = require('../config/keys'); // Or define in .env
+const { jwtSecret } = require('../config/keys'); // Or define in .env
 
 // Existing routes...
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -58,21 +58,26 @@ router.get('/logout', (req, res) => {
   });
 });
 
-router.post('/login', (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) return next(err);
-    if (!user) return res.status(401).json({ message: info.message || 'Authentication failed' });
+router.post('/login',
+  passport.authenticate('local', {
+    session: false,
+    failureMessage: true
+  }),
+  (req, res) => {
+    const payload = {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role
+    };
 
-    req.login(user, { session: false }, (err) => {
-      if (err) return next(err);
+    const token = jwt.sign(payload, jwtSecret, { expiresIn: '1h' });
 
-      res.json({
-        message: 'Login successful',
-        user,
-        token: Buffer.from(JSON.stringify(user)).toString('base64')
-      });
+    res.json({
+      success: true,
+      token,
+      user: req.user
     });
-  })(req, res, next);
-});
+  }
+);
 
 module.exports = router;

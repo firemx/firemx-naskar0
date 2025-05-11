@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
+require('./config/passport');
 
 // Load .env
 const possiblePaths = [
@@ -42,7 +43,14 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
+app.use(require('express-session')({
+  secret: 'secret',
+  resave: true,
+  saveUninitialized: true
+}));
 app.use(passport.initialize());
+app.use(passport.session());
+//app.use(passport.initialize());
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
@@ -64,9 +72,9 @@ app.use('/api/debug', debugRoutes);
 app.use('/api', commentRoutes);
 app.use('/api', require('./routes/emailRoute'));
 app.use('/api/admin/users', require('./routes/userRoute'));
-app.use(require('express-session')({ secret: 'secret', resave: true, saveUninitialized: true }));
-app.use(passport.initialize());
-app.use(passport.session());
+//app.use(require('express-session')({ secret: 'secret', resave: true, saveUninitialized: true }));
+//app.use(passport.initialize());
+//app.use(passport.session());
 
 // DB Connection
 const { connectDB } = require('./config/db');

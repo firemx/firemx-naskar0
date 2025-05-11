@@ -1,3 +1,4 @@
+// backend/config/passport-config.js
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const pool = require('./db');
@@ -17,7 +18,7 @@ passport.use(new LocalStrategy({
 
       const user = rows[0];
 
-      // Compare password (replace this with real bcrypt check later)
+      // Compare passwords – replace with bcrypt later
       if (user.password !== password) {
         return done(null, false, { message: 'Incorrect password' });
       }
@@ -57,12 +58,11 @@ passport.use(new GoogleStrategy({
   }
 ));
 
-// Serialize user
+// Serialize and Deserialize User
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-// Deserialize user
 passport.deserializeUser(async (id, done) => {
   const [rows] = await pool.query('SELECT * FROM users WHERE id = ?', [id]);
   done(null, rows[0]);

@@ -10,6 +10,7 @@ import {
   Divider,
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
+import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -25,23 +26,25 @@ const Login = () => {
     }
   
     try {
-      const res = await fetch('http://107.152.35.103:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const res = await axios.post('http://107.152.35.103:5000/api/auth/login', {
+        email,
+        password
       });
   
-      const data = await res.json();
+      const data = res.data;
   
-      if (!res.ok) {
-        setError(data.message || 'Login failed');
-        return;
-      }
-      localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('token', data.token);
-      window.location.href = '/dashboard';
+      localStorage.setItem('user', JSON.stringify(data.user));
+  
+      if (data.user.role === 'admin') {
+        window.location.href = '/admin';
+      } else {
+        window.location.href = '/dashboard';
+      }
+  
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError('Invalid credentials. Please try again.');
+      console.error('Login failed:', err.response?.data || err.message);
     }
   };
 
