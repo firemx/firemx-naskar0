@@ -64,6 +64,9 @@ app.use('/api/debug', debugRoutes);
 app.use('/api', commentRoutes);
 app.use('/api', require('./routes/emailRoute'));
 app.use('/api/admin/users', require('./routes/userRoute'));
+app.use(require('express-session')({ secret: 'secret', resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // DB Connection
 const { connectDB } = require('./config/db');
