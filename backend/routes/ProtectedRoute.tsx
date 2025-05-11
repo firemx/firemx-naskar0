@@ -7,16 +7,16 @@ interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles = [] }) => {
+const ProtectedRoute = ({ children, allowedRoles = [] }: ProtectedRouteProps) => {
   const token = localStorage.getItem('token');
   const userData = localStorage.getItem('user');
   const user = userData ? JSON.parse(userData) : null;
 
-  if (!token) {
+  if (!token || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 

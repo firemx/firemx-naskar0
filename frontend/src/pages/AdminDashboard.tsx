@@ -98,54 +98,35 @@ const AdminDashboard = () => {
 
   // Fetch initial data
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromUrl = params.get('token');
+  
+    if (tokenFromUrl) {
+      const decoded = JSON.parse(atob(tokenFromUrl));
+      localStorage.setItem('token', tokenFromUrl);
+      localStorage.setItem('user', JSON.stringify(decoded));
+      window.history.replaceState({}, '', '/admin');
+    }
+  
     const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+  
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          showSnack('Authentication required. Redirecting...', 'error');
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 1500);
-          return;
-        }
-
         const userRes = await axios.get('http://107.152.35.103:5000/api/admin/users', {
           headers: { Authorization: `Bearer ${token}` },
         });
-
-        const eventRes = await axios.get('http://107.152.35.103:5000/api/events', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        let leaderData = [];
-        try {
-          const leaderRes = await axios.get('http://107.152.35.103:5000/api/leaderboard/1', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          leaderData = leaderRes.data || [];
-        } catch (err) {
-          console.warn('Leaderboard not available');
-        }
-
-        setUsers(userRes.data || []);
-        setEvents(eventRes.data || []);
-        setLeaderboard(leaderData);
-      } catch (err: any) {
-        if (err.response?.status === 401) {
-          showSnack('Session expired. Logging you out...', 'error');
-          setTimeout(() => {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-          }, 1500);
-        } else {
-          showSnack('Failed to load dashboard data.', 'error');
-        }
-      } finally {
-        setLoading(false);
+  
+        setUsers(userRes.data);
+      } catch (err) {
+        console.error('Failed to load admin data');
+        window.location.href = '/login';
       }
     };
-
+  
     fetchData();
   }, []);
 
