@@ -10,26 +10,46 @@ passport.use(new GoogleStrategy({
   },
   async (token, refreshToken, profile, done) => {
     try {
-      // Check if user exists
-      const [rows] = await pool.query('SELECT * FROM users WHERE google_id = ?', [profile.id]);
+      const email = profile.emails[0].value;
 
-      if (rows.length > 0) {
-        return done(null, rows[0]);
-      }
+      // Determine role based on email (optional admin setup)
+      const role = email === process.env.ADMIN_EMAIL
+        ? 'admin'
+        : 'user';
 
-      // Create new user
-      await pool.query(
-        'INSERT INTO users (google_id, full_name, email, role) VALUES (?, ?, ?, ?)',
-        [profile.id, profile.displayName, profile.emails[0].value, 'user']
+      let [existingUser] = await pool.query(
+        'SELECT * FROM users WHERE google_id = ? OR email = ?',
+        [profile.id, email]
       );
 
-      // Fetch the newly created user
-      const [newUserRows] = await pool.query('SELECT * FROM users WHERE google_id = ?', [profile.id]);
+      if (existingUser.length > 0) {
+        return done(null, existingUser[0]);
+      }
 
-      return done(null, newUserRows[0]);
+      // Insert new user
+      await pool.query(
+        'INSERT INTO users (google_id, full_name, email, role) VALUES (?, ?, ?, ?)',
+        [profile.id, profile.displayName, email, role]
+      );
+
+      // Now select and return the user
+      let [freshUser] = await pool.query(
+        'SELECT * FROM users WHERE email = ?',
+        [email]
+      );
+
+      return done(null, freshUser[0]);
+
     } catch (err) {
-      console.error('Google OAuth error:', err);
-      return done(err, null);
+      console.error('Google OAuth Error:', err.message);
+
+      if (err.code === 'ER_TRUNCATED_WRONG_VALUE' || err.message.includes('Data truncated')) {
+        return done(null, false, {
+          message: 'Role value too long – please contact support'
+        });
+      }
+
+      return done(err, false);
     }
   }
 ));
