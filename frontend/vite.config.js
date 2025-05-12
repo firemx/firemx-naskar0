@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()], // adjust according to your framework
   server: {
     host: '0.0.0.0',   // Allow external access
+    host: 'naskar.kozow.com', // Optional: set to your domain
     port: 5173         // Optional: explicitly set port
   }
 });
