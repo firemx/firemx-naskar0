@@ -3,6 +3,14 @@ const path = require('path');
 const dotenv = require('dotenv');
 require('./config/passport');
 
+// Setup Express
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const passport = require('passport');
+//require('./config/passport');
+
 // Load .env
 const possiblePaths = [
   path.resolve(__dirname, '../.env'),
@@ -26,14 +34,6 @@ if (!loaded) {
 
 console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID);
 console.log('DB_USER:', process.env.DB_USER);
-
-// Setup Express
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const passport = require('passport');
-require('./config/passport');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
