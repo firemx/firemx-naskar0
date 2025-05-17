@@ -8,6 +8,7 @@ import EventDetailPage from './pages/EventDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsersPage from './pages/AdminUsersPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 import React from 'react';
 
 const App = () => {
@@ -15,7 +16,8 @@ const App = () => {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Events />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/Events" element={<Events />} />
         <Route path="/event/:id" element={<EventDetailPage />} />
         
         {/* Google Login */}
